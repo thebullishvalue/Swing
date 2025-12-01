@@ -450,7 +450,7 @@ def main():
     # Header - Using the premium-header structure
     st.markdown(f"""
         <div class="premium-header">
-            <h1>Samhita | ETF Portfolio Insights</h1>
+            <h1>Swing | ETF Portfolio Insights</h1>
             <div class="tagline">Hemrek Capital • {datetime.now().strftime("%B %d, %Y")}</div>
         </div>
     """, unsafe_allow_html=True)
