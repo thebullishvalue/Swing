@@ -10,7 +10,7 @@ import yfinance as yf # Import yfinance
 
 # Streamlit page configuration
 st.set_page_config(
-    page_title="Samhita : ETF Portfolio Analytics",
+    page_title="Swing : ETF Portfolio Analytics",
     layout="wide",
     page_icon="📊"
 )
