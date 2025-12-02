@@ -7,6 +7,7 @@ from datetime import datetime
 import numpy as np
 import locale
 import yfinance as yf # Import yfinance
+import time # Added for exponential backoff
 
 # Streamlit page configuration
 st.set_page_config(
@@ -312,8 +313,7 @@ def fetch_current_prices(symbols):
     Fetches the latest closing price for a list of symbols with the .NS suffix.
     Returns a dictionary of {original_symbol: price}.
     
-    FIXED: Added auto_adjust=False to suppress FutureWarning.
-    FIXED: Logic to correctly handle single-ticker downloads from yfinance.
+    FIXED: Added retry logic with exponential backoff for YFRateLimitError.
     """
     if not symbols:
         return {}
@@ -321,57 +321,85 @@ def fetch_current_prices(symbols):
     # Add .NS suffix to symbols and create a unique list of tickers
     tickers_with_suffix = [f"{s}.NS" for s in symbols if s and isinstance(s, str)]
     
-    try:
-        # Fetch the most recent data for all tickers
-        data = yf.download(
-            tickers=tickers_with_suffix,
-            period="1d",
-            interval="1m",
-            group_by='ticker',
-            progress=False,
-            threads=True,
-            auto_adjust=False # <-- FIX 1: Suppress FutureWarning
-        )
-        
-        prices = {}
-        
-        # Determine if the result is a MultiIndex DataFrame (multiple tickers) 
-        # or a single DataFrame (one ticker).
-        if len(tickers_with_suffix) == 1 and isinstance(data, pd.DataFrame):
-            full_ticker = tickers_with_suffix[0]
-            original_symbol = full_ticker.replace('.NS', '')
+    MAX_RETRIES = 3
+    BASE_DELAY = 5 # seconds
+
+    data = None
+    
+    for attempt in range(MAX_RETRIES):
+        try:
+            # Fetch the most recent data for all tickers
+            data = yf.download(
+                tickers=tickers_with_suffix,
+                period="1d",
+                interval="1m",
+                group_by='ticker',
+                progress=False,
+                threads=True,
+                auto_adjust=False # Suppress FutureWarning
+            )
             
-            if not data.empty:
-                last_price = data['Close'].iloc[-1]
-                prices[original_symbol] = last_price
+            # If download succeeds, break the retry loop
+            break 
+            
+        except yf.exceptions.YFRateLimitError as e:
+            if attempt < MAX_RETRIES - 1:
+                # Exponential backoff: 5s, 10s, 20s...
+                delay = BASE_DELAY * (2 ** attempt) 
+                st.warning(f"Rate limit hit. Retrying in {delay} seconds... (Attempt {attempt + 1}/{MAX_RETRIES})")
+                time.sleep(delay)
             else:
-                prices[original_symbol] = np.nan
+                # Last attempt failed due to rate limit
+                st.error(f"Failed to fetch data after {MAX_RETRIES} attempts due to rate limit or connection issues. Data may be stale.")
+                return {s: np.nan for s in symbols} # Return NaN for all
         
-        elif len(tickers_with_suffix) > 1 and isinstance(data.columns, pd.MultiIndex):
-            # Multiple tickers, standard multi-index structure
-            for full_ticker in tickers_with_suffix:
-                original_symbol = full_ticker.replace('.NS', '')
-                # Extract the column data for the specific ticker
-                ticker_data = data.get(full_ticker) 
-                
-                if ticker_data is not None and not ticker_data.empty and 'Close' in ticker_data.columns:
-                    # Use the last valid close price
-                    last_price = ticker_data['Close'].iloc[-1]
-                    prices[original_symbol] = last_price
-                else:
-                    prices[original_symbol] = np.nan # Use NaN if fetch fails
-        
-        # Handle case where yfinance might return an empty object/dict for failed fetches
-        elif data is None or (isinstance(data, dict) and not data) or (isinstance(data, pd.DataFrame) and data.empty):
-             st.warning("yfinance returned empty data.")
-             return {s: np.nan for s in symbols}
-             
-        return prices
-        
-    except Exception as e:
-        # st.error(f"Error fetching current prices via yfinance: {e}")
+        except Exception as e:
+            # Handle other general exceptions (e.g., connection issues, invalid ticker)
+            st.error(f"Error fetching data: {e}. Data may be stale.") 
+            return {s: np.nan for s in symbols}
+
+
+    # --- DATA PROCESSING LOGIC ---
+    prices = {}
+
+    # Check if any data was successfully retrieved (might be None if first attempt failed and we broke the loop)
+    if data is None:
         return {s: np.nan for s in symbols}
 
+
+    # Determine if the result is a MultiIndex DataFrame (multiple tickers) 
+    # or a single DataFrame (one ticker).
+    if len(tickers_with_suffix) == 1 and isinstance(data, pd.DataFrame):
+        full_ticker = tickers_with_suffix[0]
+        original_symbol = full_ticker.replace('.NS', '')
+        
+        if not data.empty and 'Close' in data.columns:
+            last_price = data['Close'].iloc[-1]
+            prices[original_symbol] = last_price
+        else:
+            prices[original_symbol] = np.nan
+    
+    elif len(tickers_with_suffix) > 1 and isinstance(data.columns, pd.MultiIndex):
+        # Multiple tickers, standard multi-index structure
+        for full_ticker in tickers_with_suffix:
+            original_symbol = full_ticker.replace('.NS', '')
+            # Extract the column data for the specific ticker
+            ticker_data = data.get(full_ticker) 
+            
+            if ticker_data is not None and not ticker_data.empty and 'Close' in ticker_data.columns:
+                # Use the last valid close price
+                last_price = ticker_data['Close'].iloc[-1]
+                prices[original_symbol] = last_price
+            else:
+                prices[original_symbol] = np.nan # Use NaN if fetch fails
+    
+    # Handle case where yfinance might return an empty object/dict for failed fetches (even after retries)
+    elif data.empty or (isinstance(data, dict) and not data):
+         st.warning("yfinance returned empty data.")
+         return {s: np.nan for s in symbols}
+         
+    return prices
+    
 
 # Function to load data
 @st.cache_data
