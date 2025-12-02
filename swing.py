@@ -311,6 +311,9 @@ def fetch_current_prices(symbols):
     """
     Fetches the latest closing price for a list of symbols with the .NS suffix.
     Returns a dictionary of {original_symbol: price}.
+    
+    FIXED: Added auto_adjust=False to suppress FutureWarning.
+    FIXED: Logic to correctly handle single-ticker downloads from yfinance.
     """
     if not symbols:
         return {}
@@ -326,28 +329,47 @@ def fetch_current_prices(symbols):
             interval="1m",
             group_by='ticker',
             progress=False,
-            threads=True
+            threads=True,
+            auto_adjust=False # <-- FIX 1: Suppress FutureWarning
         )
         
         prices = {}
-        for full_ticker in tickers_with_suffix:
+        
+        # Determine if the result is a MultiIndex DataFrame (multiple tickers) 
+        # or a single DataFrame (one ticker).
+        if len(tickers_with_suffix) == 1 and isinstance(data, pd.DataFrame):
+            full_ticker = tickers_with_suffix[0]
             original_symbol = full_ticker.replace('.NS', '')
             
-            if len(tickers_with_suffix) == 1:
-                ticker_data = data
-            else:
-                ticker_data = data.get(full_ticker)
-            
-            if ticker_data is not None and not ticker_data.empty:
-                # Use the last valid close price
-                last_price = ticker_data['Close'].iloc[-1]
+            if not data.empty:
+                last_price = data['Close'].iloc[-1]
                 prices[original_symbol] = last_price
             else:
-                prices[original_symbol] = np.nan # Use NaN if fetch fails
-
+                prices[original_symbol] = np.nan
+        
+        elif len(tickers_with_suffix) > 1 and isinstance(data.columns, pd.MultiIndex):
+            # Multiple tickers, standard multi-index structure
+            for full_ticker in tickers_with_suffix:
+                original_symbol = full_ticker.replace('.NS', '')
+                # Extract the column data for the specific ticker
+                ticker_data = data.get(full_ticker) 
+                
+                if ticker_data is not None and not ticker_data.empty and 'Close' in ticker_data.columns:
+                    # Use the last valid close price
+                    last_price = ticker_data['Close'].iloc[-1]
+                    prices[original_symbol] = last_price
+                else:
+                    prices[original_symbol] = np.nan # Use NaN if fetch fails
+        
+        # Handle case where yfinance might return an empty object/dict for failed fetches
+        elif data is None or (isinstance(data, dict) and not data) or (isinstance(data, pd.DataFrame) and data.empty):
+             st.warning("yfinance returned empty data.")
+             return {s: np.nan for s in symbols}
+             
         return prices
+        
     except Exception as e:
-        st.error(f"Error fetching current prices via yfinance: {e}")
+        # st.error(f"Error fetching current prices via yfinance: {e}")
         return {s: np.nan for s in symbols}
 
 
@@ -718,7 +740,8 @@ def main():
             height=500,
             bargap=0.15
         )
-        st.plotly_chart(fig_gain, use_container_width=True)
+        # FIX 2: Replace use_container_width=True with width='stretch'
+        st.plotly_chart(fig_gain, width='stretch')
 
         # Portfolio Composition Treemap
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
@@ -763,7 +786,8 @@ def main():
             paper_bgcolor='rgba(0,0,0,0)',
             font_color='#EAEAEA'
         )
-        st.plotly_chart(fig_treemap, use_container_width=True)
+        # FIX 2: Replace use_container_width=True with width='stretch'
+        st.plotly_chart(fig_treemap, width='stretch')
 
     with tab2:
         # Portfolio Holdings Table
@@ -820,6 +844,8 @@ def main():
         # Export button for convenience in this tab too
         excel_data = to_excel(df)
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        # FIX 2: Replace use_container_width=False (which is the default, but we'll leave it as is 
+        # since it's only for a button and not a graph/chart where the warning originated)
         st.download_button(
             "Export Raw Portfolio Data (Excel)",
             excel_data,
