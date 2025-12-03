@@ -419,32 +419,39 @@ def calculate_metrics(df):
 
 # Function to format currency (Indian Rupee with Indian comma style)
 def format_currency(value):
-    # This is a robust fallback for the Indian number system, as locale isn't reliable in Streamlit/hosted environments
+    """
+    Formats a number in Indian numbering system (lakhs, crores).
+    Example: 6797258.49 -> ₹67,97,258.49
+    """
     value = float(value)
     negative = value < 0
     value = abs(value)
     
-    # Handle the integer part separately
+    # Split into integer and decimal parts
     integer_part = int(value)
-    str_value = str(integer_part)[::-1]
+    decimal_part = value - integer_part
     
-    grouped = []
-    if len(str_value) >= 3:
-        grouped.append(str_value[:3])
-        str_value = str_value[3:]
-        while str_value:
-            grouped.append(str_value[:2])
-            str_value = str_value[2:]
-        formatted = ','.join(grouped[::-1])
+    # Convert integer to string
+    int_str = str(integer_part)
+    
+    # Indian numbering: first group of 3 from right, then groups of 2
+    if len(int_str) <= 3:
+        formatted = int_str
     else:
-        formatted = str_value[::-1]
-
-    # Handle the decimal part
-    decimal_part = round(value - integer_part, 2)
-    if decimal_part > 0 or value == 0:
-        # Add 2 decimal places, including the leading dot
-        formatted += f"{decimal_part:.2f}"[1:]
-
+        # Last 3 digits
+        result = int_str[-3:]
+        # Remaining digits, grouped by 2 from right to left
+        remaining = int_str[:-3]
+        while len(remaining) > 2:
+            result = remaining[-2:] + ',' + result
+            remaining = remaining[:-2]
+        if remaining:
+            result = remaining + ',' + result
+        formatted = result
+    
+    # Add decimal places (always show 2 decimal places)
+    formatted += f"{decimal_part:.2f}"[1:]
+    
     formatted = f"{'-' if negative else ''}₹{formatted}"
     return formatted
 
@@ -731,7 +738,7 @@ def main():
             height=500,
             bargap=0.15
         )
-        st.plotly_chart(fig_gain, use_container_width=True)
+        st.plotly_chart(fig_gain, width="stretch")
 
         # Portfolio Composition Treemap
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
@@ -776,7 +783,7 @@ def main():
             paper_bgcolor='rgba(0,0,0,0)',
             font_color='#EAEAEA'
         )
-        st.plotly_chart(fig_treemap, use_container_width=True)
+        st.plotly_chart(fig_treemap, width="stretch")
 
     with tab2:
         # Portfolio Holdings Table
@@ -838,7 +845,7 @@ def main():
             excel_data,
             file_name=f"samhita_portfolio_details_{datetime.now().strftime('%Y%m%d')}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheet.sheet",
-            use_container_width=False
+            width="content"
         )
 
 
