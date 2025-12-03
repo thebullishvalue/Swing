@@ -7,7 +7,6 @@ from datetime import datetime
 import numpy as np
 import locale
 import yfinance as yf # Import yfinance
-import time # Added for exponential backoff
 
 # Streamlit page configuration
 st.set_page_config(
@@ -312,8 +311,6 @@ def fetch_current_prices(symbols):
     """
     Fetches the latest closing price for a list of symbols with the .NS suffix.
     Returns a dictionary of {original_symbol: price}.
-    
-    FIXED: Added retry logic with exponential backoff for YFRateLimitError.
     """
     if not symbols:
         return {}
@@ -321,85 +318,51 @@ def fetch_current_prices(symbols):
     # Add .NS suffix to symbols and create a unique list of tickers
     tickers_with_suffix = [f"{s}.NS" for s in symbols if s and isinstance(s, str)]
     
-    MAX_RETRIES = 3
-    BASE_DELAY = 5 # seconds
-
-    data = None
-    
-    for attempt in range(MAX_RETRIES):
-        try:
-            # Fetch the most recent data for all tickers
-            data = yf.download(
-                tickers=tickers_with_suffix,
-                period="1d",
-                interval="1m",
-                group_by='ticker',
-                progress=False,
-                threads=True,
-                auto_adjust=False # Suppress FutureWarning
-            )
-            
-            # If download succeeds, break the retry loop
-            break 
-            
-        except yf.exceptions.YFRateLimitError as e:
-            if attempt < MAX_RETRIES - 1:
-                # Exponential backoff: 5s, 10s, 20s...
-                delay = BASE_DELAY * (2 ** attempt) 
-                st.warning(f"Rate limit hit. Retrying in {delay} seconds... (Attempt {attempt + 1}/{MAX_RETRIES})")
-                time.sleep(delay)
-            else:
-                # Last attempt failed due to rate limit
-                st.error(f"Failed to fetch data after {MAX_RETRIES} attempts due to rate limit or connection issues. Data may be stale.")
-                return {s: np.nan for s in symbols} # Return NaN for all
+    try:
+        # Fetch the most recent data for all tickers
+        data = yf.download(
+            tickers=tickers_with_suffix,
+            period="1d",
+            interval="1m",
+            group_by='ticker',
+            progress=False,
+            threads=True
+        )
         
-        except Exception as e:
-            # Handle other general exceptions (e.g., connection issues, invalid ticker)
-            st.error(f"Error fetching data: {e}. Data may be stale.") 
-            return {s: np.nan for s in symbols}
-
-
-    # --- DATA PROCESSING LOGIC ---
-    prices = {}
-
-    # Check if any data was successfully retrieved (might be None if first attempt failed and we broke the loop)
-    if data is None:
-        return {s: np.nan for s in symbols}
-
-
-    # Determine if the result is a MultiIndex DataFrame (multiple tickers) 
-    # or a single DataFrame (one ticker).
-    if len(tickers_with_suffix) == 1 and isinstance(data, pd.DataFrame):
-        full_ticker = tickers_with_suffix[0]
-        original_symbol = full_ticker.replace('.NS', '')
-        
-        if not data.empty and 'Close' in data.columns:
-            last_price = data['Close'].iloc[-1]
-            prices[original_symbol] = last_price
-        else:
-            prices[original_symbol] = np.nan
-    
-    elif len(tickers_with_suffix) > 1 and isinstance(data.columns, pd.MultiIndex):
-        # Multiple tickers, standard multi-index structure
+        prices = {}
         for full_ticker in tickers_with_suffix:
             original_symbol = full_ticker.replace('.NS', '')
-            # Extract the column data for the specific ticker
-            ticker_data = data.get(full_ticker) 
             
-            if ticker_data is not None and not ticker_data.empty and 'Close' in ticker_data.columns:
-                # Use the last valid close price
-                last_price = ticker_data['Close'].iloc[-1]
-                prices[original_symbol] = last_price
-            else:
-                prices[original_symbol] = np.nan # Use NaN if fetch fails
-    
-    # Handle case where yfinance might return an empty object/dict for failed fetches (even after retries)
-    elif data.empty or (isinstance(data, dict) and not data):
-         st.warning("yfinance returned empty data.")
-         return {s: np.nan for s in symbols}
-         
-    return prices
-    
+            try:
+                if len(tickers_with_suffix) == 1:
+                    # Single ticker: data columns are just ['Open', 'High', 'Low', 'Close', ...]
+                    ticker_data = data
+                else:
+                    # Multiple tickers: data has multi-level columns (ticker, column)
+                    # Access using the ticker as the first level
+                    if full_ticker in data.columns.get_level_values(0):
+                        ticker_data = data[full_ticker]
+                    else:
+                        ticker_data = None
+                
+                if ticker_data is not None and not ticker_data.empty and 'Close' in ticker_data.columns:
+                    # Get the last valid (non-NaN) close price
+                    close_series = ticker_data['Close'].dropna()
+                    if not close_series.empty:
+                        last_price = close_series.iloc[-1]
+                        prices[original_symbol] = last_price
+                    else:
+                        prices[original_symbol] = np.nan
+                else:
+                    prices[original_symbol] = np.nan  # Use NaN if fetch fails
+            except Exception:
+                prices[original_symbol] = np.nan  # Use NaN if any error occurs
+
+        return prices
+    except Exception as e:
+        st.error(f"Error fetching current prices via yfinance: {e}")
+        return {s: np.nan for s in symbols}
+
 
 # Function to load data
 @st.cache_data
@@ -467,10 +430,10 @@ def format_currency(value):
     
     grouped = []
     if len(str_value) >= 3:
-        grouped.append(str_value[:3][::-1]) # Reverse back the slice to correct order
+        grouped.append(str_value[:3])
         str_value = str_value[3:]
         while str_value:
-            grouped.append(str_value[:2][::-1]) # Reverse back the slice to correct order
+            grouped.append(str_value[:2])
             str_value = str_value[2:]
         formatted = ','.join(grouped[::-1])
     else:
@@ -768,8 +731,7 @@ def main():
             height=500,
             bargap=0.15
         )
-        # FIX 2: Replace use_container_width=True with width='stretch'
-        st.plotly_chart(fig_gain, width='stretch')
+        st.plotly_chart(fig_gain, use_container_width=True)
 
         # Portfolio Composition Treemap
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
@@ -814,8 +776,7 @@ def main():
             paper_bgcolor='rgba(0,0,0,0)',
             font_color='#EAEAEA'
         )
-        # FIX 2: Replace use_container_width=True with width='stretch'
-        st.plotly_chart(fig_treemap, width='stretch')
+        st.plotly_chart(fig_treemap, use_container_width=True)
 
     with tab2:
         # Portfolio Holdings Table
@@ -872,8 +833,6 @@ def main():
         # Export button for convenience in this tab too
         excel_data = to_excel(df)
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-        # FIX 2: Replace use_container_width=False (which is the default, but we'll leave it as is 
-        # since it's only for a button and not a graph/chart where the warning originated)
         st.download_button(
             "Export Raw Portfolio Data (Excel)",
             excel_data,
