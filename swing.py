@@ -1684,23 +1684,53 @@ def fetch_analysis_data(symbols, days_back):
 
 
 def compute_metrics(returns, benchmark_returns=None, rf_rate=0.065):
-    """Compute institutional-grade performance metrics."""
+    """Compute institutional-grade performance metrics.
+    
+    Handles edge cases:
+    - Short periods (< 5 days)
+    - Negative total returns
+    - Zero volatility
+    - Missing benchmark data
+    """
     m = {}
     
     if returns.empty or len(returns) < 2:
-        return m
+        # Return empty dict with safe defaults
+        return {
+            'total_return': 0, 'cagr': 0, 'volatility': 0, 'daily_vol': 0,
+            'max_drawdown': 0, 'drawdown_series': pd.Series(),
+            'sharpe': 0, 'sortino': 0, 'calmar': 0,
+            'var_95': 0, 'var_99': 0, 'cvar_95': 0,
+            'win_rate': 0, 'win_days': 0, 'lose_days': 0,
+            'best_day': 0, 'worst_day': 0,
+            'skewness': 0, 'kurtosis': 0, 'profit_factor': 0,
+            'beta': 1, 'alpha': 0, 'correlation': 0, 'r_squared': 0,
+            'tracking_error': 0, 'info_ratio': 0, 'treynor': 0,
+            'up_capture': 100, 'down_capture': 100, 'benchmark_return': 0
+        }
     
     # Period metrics
     total_ret = (1 + returns).prod() - 1
     n_days = len(returns)
-    ann_factor = 252 / n_days
+    
+    # Annualization factor - cap at 1 for very short periods
+    ann_factor = min(252 / n_days, 1) if n_days < 252 else 252 / n_days
     
     m['total_return'] = total_ret * 100
-    m['cagr'] = ((1 + total_ret) ** ann_factor - 1) * 100
+    
+    # CAGR calculation - handle negative returns properly
+    if total_ret > -1:  # Can only compute if not total loss
+        # For short periods, just annualize the total return
+        if n_days < 20:
+            m['cagr'] = total_ret * (252 / n_days) * 100  # Simple annualization
+        else:
+            m['cagr'] = ((1 + total_ret) ** ann_factor - 1) * 100
+    else:
+        m['cagr'] = -100  # Total loss
     
     # Volatility
     daily_vol = returns.std()
-    m['volatility'] = daily_vol * np.sqrt(252) * 100
+    m['volatility'] = daily_vol * np.sqrt(252) * 100 if daily_vol > 0 else 0
     m['daily_vol'] = daily_vol * 100
     
     # Drawdown
@@ -1713,16 +1743,33 @@ def compute_metrics(returns, benchmark_returns=None, rf_rate=0.065):
     # Risk-adjusted ratios
     rf_daily = rf_rate / 252
     excess = returns - rf_daily
+    excess_mean = excess.mean()
     
-    m['sharpe'] = (excess.mean() / daily_vol * np.sqrt(252)) if daily_vol > 0 else 0
+    # Sharpe - handle zero/near-zero volatility
+    if daily_vol > 1e-8:
+        m['sharpe'] = (excess_mean / daily_vol) * np.sqrt(252)
+    else:
+        m['sharpe'] = 0 if abs(excess_mean) < 1e-8 else (np.sign(excess_mean) * 10)  # Cap at ±10
     
+    # Sortino - use downside deviation
     downside = returns[returns < 0]
-    downside_vol = downside.std() if len(downside) > 0 else daily_vol
-    m['sortino'] = (excess.mean() / downside_vol * np.sqrt(252)) if downside_vol > 0 else 0
+    if len(downside) > 0:
+        downside_vol = downside.std()
+        if downside_vol > 1e-8:
+            m['sortino'] = (excess_mean / downside_vol) * np.sqrt(252)
+        else:
+            m['sortino'] = m['sharpe']  # Fall back to Sharpe
+    else:
+        # No negative days - exceptional performance
+        m['sortino'] = m['sharpe'] * 1.5 if m['sharpe'] > 0 else 0
     
-    m['calmar'] = m['cagr'] / abs(m['max_drawdown']) if m['max_drawdown'] != 0 else 0
+    # Calmar - handle zero drawdown
+    if abs(m['max_drawdown']) > 0.01:  # At least 0.01% drawdown
+        m['calmar'] = m['cagr'] / abs(m['max_drawdown'])
+    else:
+        m['calmar'] = m['cagr'] if m['cagr'] > 0 else 0
     
-    # VaR and CVaR
+    # VaR and CVaR (always negative or zero for losses)
     m['var_95'] = np.percentile(returns, 5) * 100
     m['var_99'] = np.percentile(returns, 1) * 100
     var_threshold = np.percentile(returns, 5)
@@ -1731,54 +1778,97 @@ def compute_metrics(returns, benchmark_returns=None, rf_rate=0.065):
     
     # Win rate
     m['win_rate'] = (returns > 0).mean() * 100
-    m['win_days'] = (returns > 0).sum()
-    m['lose_days'] = (returns < 0).sum()
+    m['win_days'] = int((returns > 0).sum())
+    m['lose_days'] = int((returns < 0).sum())
     
     # Best/Worst
     m['best_day'] = returns.max() * 100
     m['worst_day'] = returns.min() * 100
     
-    # Skew and Kurtosis
-    m['skewness'] = returns.skew()
-    m['kurtosis'] = returns.kurtosis()
+    # Skew and Kurtosis - need enough data
+    if n_days >= 5:
+        m['skewness'] = returns.skew()
+        m['kurtosis'] = returns.kurtosis()
+    else:
+        m['skewness'] = 0
+        m['kurtosis'] = 0
     
     # Profit Factor
     gains = returns[returns > 0].sum()
     losses = abs(returns[returns < 0].sum())
-    m['profit_factor'] = gains / losses if losses > 0 else float('inf')
+    if losses > 1e-8:
+        m['profit_factor'] = gains / losses
+    elif gains > 0:
+        m['profit_factor'] = 10  # Cap at 10 for display
+    else:
+        m['profit_factor'] = 0
+    
+    # Initialize benchmark defaults
+    m['beta'] = 1
+    m['alpha'] = 0
+    m['correlation'] = 0
+    m['r_squared'] = 0
+    m['tracking_error'] = 0
+    m['info_ratio'] = 0
+    m['treynor'] = 0
+    m['up_capture'] = 100
+    m['down_capture'] = 100
+    m['benchmark_return'] = 0
     
     # Benchmark-relative metrics
-    if benchmark_returns is not None and len(benchmark_returns) > 10:
+    if benchmark_returns is not None and len(benchmark_returns) > 5:
         aligned = pd.concat([returns, benchmark_returns], axis=1).dropna()
-        if len(aligned) > 10:
+        if len(aligned) > 5:
             p_ret = aligned.iloc[:, 0]
             b_ret = aligned.iloc[:, 1]
             
             # Beta
-            cov = np.cov(p_ret, b_ret)[0, 1]
             var_b = b_ret.var()
-            m['beta'] = cov / var_b if var_b > 0 else 1
+            if var_b > 1e-10:
+                cov = np.cov(p_ret, b_ret)[0, 1]
+                m['beta'] = cov / var_b
+            else:
+                m['beta'] = 1
             
-            # Alpha (annualized)
+            # Benchmark return
             b_total = (1 + b_ret).prod() - 1
-            b_cagr = ((1 + b_total) ** ann_factor - 1)
+            m['benchmark_return'] = b_total * 100
+            
+            # Alpha (annualized) - CAPM formula
+            aligned_days = len(aligned)
+            aligned_ann = min(252 / aligned_days, 1) if aligned_days < 252 else 252 / aligned_days
+            
+            if b_total > -1:
+                b_cagr = ((1 + b_total) ** aligned_ann - 1) if aligned_days >= 20 else b_total * (252 / aligned_days)
+            else:
+                b_cagr = -1
+            
             p_cagr = m['cagr'] / 100
-            m['alpha'] = (p_cagr - (rf_rate + m['beta'] * (b_cagr - rf_rate))) * 100
+            expected_return = rf_rate + m['beta'] * (b_cagr - rf_rate)
+            m['alpha'] = (p_cagr - expected_return) * 100
             
             # Correlation and R-squared
-            m['correlation'] = p_ret.corr(b_ret)
+            corr = p_ret.corr(b_ret)
+            m['correlation'] = corr if not np.isnan(corr) else 0
             m['r_squared'] = m['correlation'] ** 2
             
             # Tracking Error
-            tracking = (p_ret - b_ret).std() * np.sqrt(252)
+            tracking_diff = p_ret - b_ret
+            tracking = tracking_diff.std() * np.sqrt(252)
             m['tracking_error'] = tracking * 100
             
             # Information Ratio
-            excess_ret = p_cagr - b_cagr
-            m['info_ratio'] = excess_ret / tracking if tracking > 0 else 0
+            if tracking > 1e-8:
+                excess_ret = p_cagr - b_cagr
+                m['info_ratio'] = excess_ret / tracking
+            else:
+                m['info_ratio'] = 0
             
             # Treynor Ratio
-            m['treynor'] = (p_cagr - rf_rate) / m['beta'] if m['beta'] != 0 else 0
+            if abs(m['beta']) > 0.01:
+                m['treynor'] = (p_cagr - rf_rate) / m['beta']
+            else:
+                m['treynor'] = 0
             
             # Up/Down Capture
             up_mask = b_ret > 0
@@ -1787,18 +1877,14 @@ def compute_metrics(returns, benchmark_returns=None, rf_rate=0.065):
             if up_mask.sum() > 0:
                 up_p = (1 + p_ret[up_mask]).prod()
                 up_b = (1 + b_ret[up_mask]).prod()
-                m['up_capture'] = (up_p / up_b) * 100 if up_b > 0 else 100
-            else:
-                m['up_capture'] = 100
-                
+                if up_b > 0:
+                    m['up_capture'] = (up_p / up_b) * 100
+            
             if down_mask.sum() > 0:
                 down_p = (1 + p_ret[down_mask]).prod()
                 down_b = (1 + b_ret[down_mask]).prod()
-                m['down_capture'] = (down_p / down_b) * 100 if down_b > 0 else 100
-            else:
-                m['down_capture'] = 100
-            
-            m['benchmark_return'] = b_total * 100
+                if down_b > 0 and down_b != 1:
+                    m['down_capture'] = (down_p / down_b) * 100
     
     return m
 
@@ -1832,10 +1918,17 @@ def render_analysis_mode(df, metrics, anchor_date=None):
     
     # Timeframe buttons row (disabled when anchor date is active)
     if anchor_date:
-        st.info(f"📅 **Anchor Date Active**: All metrics calculated from {anchor_date.strftime('%B %d, %Y')}. Timeframe buttons disabled.", icon="📌")
+        # Show toast notification
+        st.toast(f"📅 Anchor Date Active: Metrics from {anchor_date.strftime('%b %d, %Y')}", icon="📌")
         # Calculate days from anchor date to today
         days_back = (datetime.now().date() - anchor_date).days + 1
         selected_tf = "CUSTOM"
+        
+        # Still show timeframe buttons but disabled style
+        tf_cols = st.columns(len(TIMEFRAMES))
+        for i, tf in enumerate(TIMEFRAMES.keys()):
+            with tf_cols[i]:
+                st.button(tf, key=f"tf_{tf}_disabled", use_container_width=True, disabled=True)
     else:
         tf_cols = st.columns(len(TIMEFRAMES))
         for i, tf in enumerate(TIMEFRAMES.keys()):
@@ -1944,24 +2037,14 @@ def render_analysis_mode(df, metrics, anchor_date=None):
         xaxis=dict(
             gridcolor='rgba(255,255,255,0.05)',
             showgrid=True,
-            showspikes=True,
-            spikecolor='#888888',
-            spikethickness=1,
-            spikedash='dot',
-            spikemode='across',
-            spikesnap='cursor'
+            showspikes=False
         ),
         yaxis=dict(
             gridcolor='rgba(255,255,255,0.05)',
             showgrid=True,
             title='',
             side='right',
-            showspikes=True,
-            spikecolor='#888888',
-            spikethickness=1,
-            spikedash='dot',
-            spikemode='across',
-            spikesnap='cursor'
+            showspikes=False
         ),
         height=420,
         showlegend=True,
@@ -1974,11 +2057,10 @@ def render_analysis_mode(df, metrics, anchor_date=None):
             bgcolor='rgba(0,0,0,0)',
             font=dict(size=11)
         ),
-        hovermode='closest',
-        spikedistance=-1
+        hovermode='closest'
     )
     
-    # Add range selector and crosshair
+    # Range selector settings
     fig.update_xaxes(
         rangeslider=dict(visible=False),
         rangeselector=dict(visible=False)
