@@ -1302,7 +1302,7 @@ def main():
                     height=320
                 )
                 fig_tree.update_coloraxes(showscale=False)
-                st.plotly_chart(fig_tree, use_container_width=True)
+                st.plotly_chart(fig_tree, width="stretch")
             
             with col_lorenz:
                 st.markdown("#### Concentration Curve")
@@ -1353,7 +1353,7 @@ def main():
                     showlegend=True,
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
                 )
-                st.plotly_chart(fig_lorenz, use_container_width=True)
+                st.plotly_chart(fig_lorenz, width="stretch")
             
             st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
             
@@ -1415,7 +1415,7 @@ def main():
             fig_contrib.update_xaxes(gridcolor='rgba(255,255,255,0.05)')
             fig_contrib.update_yaxes(gridcolor='rgba(255,255,255,0.05)')
             
-            st.plotly_chart(fig_contrib, use_container_width=True)
+            st.plotly_chart(fig_contrib, width="stretch")
             
             # Summary Statistics in expander
             with st.expander("📊 Detailed Statistics", expanded=False):
@@ -1802,9 +1802,11 @@ def render_analysis_mode(df, metrics):
             gridcolor='rgba(255,255,255,0.05)',
             showgrid=True,
             showspikes=True,
-            spikecolor='#FFC300',
+            spikecolor='#888888',
             spikethickness=1,
-            spikedash='dot'
+            spikedash='dot',
+            spikemode='across',
+            spikesnap='cursor'
         ),
         yaxis=dict(
             gridcolor='rgba(255,255,255,0.05)',
@@ -1812,9 +1814,11 @@ def render_analysis_mode(df, metrics):
             title='',
             side='right',
             showspikes=True,
-            spikecolor='#FFC300',
+            spikecolor='#888888',
             spikethickness=1,
-            spikedash='dot'
+            spikedash='dot',
+            spikemode='across',
+            spikesnap='cursor'
         ),
         height=420,
         showlegend=True,
@@ -1827,7 +1831,8 @@ def render_analysis_mode(df, metrics):
             bgcolor='rgba(0,0,0,0)',
             font=dict(size=11)
         ),
-        hovermode='x unified'
+        hovermode='x unified',
+        spikedistance=-1
     )
     
     # Add range selector and crosshair
@@ -1836,7 +1841,7 @@ def render_analysis_mode(df, metrics):
         rangeselector=dict(visible=False)
     )
     
-    st.plotly_chart(fig, use_container_width=True, config={
+    st.plotly_chart(fig, width="stretch", config={
         'displayModeBar': True,
         'displaylogo': False,
         'modeBarButtonsToRemove': ['lasso2d', 'select2d']
@@ -2101,7 +2106,7 @@ def render_analysis_mode(df, metrics):
                 height=280,
                 showlegend=False
             )
-            st.plotly_chart(fig_dd, use_container_width=True)
+            st.plotly_chart(fig_dd, width="stretch")
     
     with col_dist:
         st.markdown("#### Returns Distribution")
@@ -2142,7 +2147,7 @@ def render_analysis_mode(df, metrics):
             height=280,
             showlegend=False
         )
-        st.plotly_chart(fig_hist, use_container_width=True)
+        st.plotly_chart(fig_hist, width="stretch")
     
     # =========================================================================
     # ROLLING METRICS
@@ -2169,7 +2174,7 @@ def render_analysis_mode(df, metrics):
                 y=roll_sharpe.values,
                 mode='lines',
                 line=dict(color='#FFC300', width=1.5),
-                hovertemplate='%{x|%b %d}<br>Sharpe: %{y:.2f}<extra></extra>'
+                hovertemplate='%{x|%b %d, %Y}<br>Sharpe: %{y:.2f}<extra></extra>'
             ))
             fig_rs.add_hline(y=1, line_dash="dash", line_color="#10b981", annotation_text="Target", annotation_position="right")
             fig_rs.add_hline(y=0, line_dash="dash", line_color="#888888")
@@ -2181,12 +2186,15 @@ def render_analysis_mode(df, metrics):
                 font=dict(color="#EAEAEA"),
                 margin=dict(l=10, r=10, t=30, b=10),
                 title=dict(text="Rolling Sharpe Ratio", font=dict(size=13)),
-                xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                xaxis=dict(
+                    gridcolor='rgba(255,255,255,0.05)',
+                    tickformat='%b %Y'
+                ),
                 yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                 height=260,
                 showlegend=False
             )
-            st.plotly_chart(fig_rs, use_container_width=True)
+            st.plotly_chart(fig_rs, width="stretch")
         
         with col_rb:
             # Rolling Beta
@@ -2194,39 +2202,43 @@ def render_analysis_mode(df, metrics):
                 aligned = pd.concat([port_returns, bench_returns], axis=1).dropna()
                 aligned.columns = ['Port', 'Bench']
                 
-                roll_betas = []
-                roll_dates = []
-                
-                for i in range(window, len(aligned)):
-                    w = aligned.iloc[i-window:i]
-                    cov = np.cov(w['Port'], w['Bench'])[0, 1]
-                    var = w['Bench'].var()
-                    roll_betas.append(cov / var if var > 0 else 1)
-                    roll_dates.append(aligned.index[i])
-                
-                fig_rb = go.Figure()
-                fig_rb.add_trace(go.Scatter(
-                    x=roll_dates,
-                    y=roll_betas,
-                    mode='lines',
-                    line=dict(color='#06b6d4', width=1.5),
-                    hovertemplate='%{x|%b %d}<br>Beta: %{y:.2f}<extra></extra>'
-                ))
-                fig_rb.add_hline(y=1, line_dash="dash", line_color="#888888", annotation_text="Market", annotation_position="right")
-                
-                fig_rb.update_layout(
-                    template='plotly_dark',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color="#EAEAEA"),
-                    margin=dict(l=10, r=10, t=30, b=10),
-                    title=dict(text="Rolling Beta", font=dict(size=13)),
-                    xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
-                    yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
-                    height=260,
-                    showlegend=False
-                )
-                st.plotly_chart(fig_rb, use_container_width=True)
+                if len(aligned) > window:
+                    roll_betas = []
+                    roll_dates = []
+                    
+                    for i in range(window, len(aligned)):
+                        w = aligned.iloc[i-window:i]
+                        cov = np.cov(w['Port'], w['Bench'])[0, 1]
+                        var = w['Bench'].var()
+                        roll_betas.append(cov / var if var > 0 else 1)
+                        roll_dates.append(aligned.index[i])
+                    
+                    fig_rb = go.Figure()
+                    fig_rb.add_trace(go.Scatter(
+                        x=roll_dates,
+                        y=roll_betas,
+                        mode='lines',
+                        line=dict(color='#06b6d4', width=1.5),
+                        hovertemplate='%{x|%b %d, %Y}<br>Beta: %{y:.2f}<extra></extra>'
+                    ))
+                    fig_rb.add_hline(y=1, line_dash="dash", line_color="#888888", annotation_text="Market", annotation_position="right")
+                    
+                    fig_rb.update_layout(
+                        template='plotly_dark',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color="#EAEAEA"),
+                        margin=dict(l=10, r=10, t=30, b=10),
+                        title=dict(text="Rolling Beta", font=dict(size=13)),
+                        xaxis=dict(
+                            gridcolor='rgba(255,255,255,0.05)',
+                            tickformat='%b %Y'
+                        ),
+                        yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                        height=260,
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig_rb, width="stretch")
     
     # =========================================================================
     # MONTHLY RETURNS HEATMAP
@@ -2235,34 +2247,60 @@ def render_analysis_mode(df, metrics):
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     st.markdown("#### Monthly Returns Heatmap")
     
+    # Calculate monthly returns
     monthly = port_value.resample('ME').last().pct_change().dropna() * 100
     
     if len(monthly) > 1:
+        # Create a proper month-year structure
         monthly_df = pd.DataFrame({
             'Year': monthly.index.year,
             'Month': monthly.index.month,
             'Return': monthly.values
         })
         
-        pivot = monthly_df.pivot_table(values='Return', index='Year', columns='Month', aggfunc='first')
+        # Get unique years
+        years = sorted(monthly_df['Year'].unique())
+        
+        # Create pivot with all 12 months as columns
         month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        pivot.columns = [month_names[c-1] for c in pivot.columns]
         
-        # Add YTD column
-        yearly = port_value.resample('YE').last().pct_change().dropna() * 100
-        yearly_dict = {idx.year: val for idx, val in yearly.items()}
-        pivot['YTD'] = pivot.index.map(lambda y: yearly_dict.get(y, np.nan))
+        # Build heatmap data manually to ensure proper structure
+        heatmap_data = []
+        year_labels = []
         
-        # Convert year index to strings to avoid decimal display
-        pivot.index = pivot.index.astype(str)
+        for year in years:
+            year_data = monthly_df[monthly_df['Year'] == year]
+            row = []
+            for month in range(1, 13):
+                month_return = year_data[year_data['Month'] == month]['Return'].values
+                if len(month_return) > 0:
+                    row.append(month_return[0])
+                else:
+                    row.append(np.nan)
+            
+            # Calculate YTD for this year
+            year_start_val = port_value[port_value.index.year == year].iloc[0] if len(port_value[port_value.index.year == year]) > 0 else np.nan
+            year_end_val = port_value[port_value.index.year == year].iloc[-1] if len(port_value[port_value.index.year == year]) > 0 else np.nan
+            if pd.notna(year_start_val) and pd.notna(year_end_val) and year_start_val > 0:
+                ytd = ((year_end_val / year_start_val) - 1) * 100
+            else:
+                ytd = np.nan
+            row.append(ytd)
+            
+            heatmap_data.append(row)
+            year_labels.append(str(year))
         
+        # Column labels
+        col_labels = month_names + ['YTD']
+        
+        # Create heatmap
         fig_heat = go.Figure(data=go.Heatmap(
-            z=pivot.values,
-            x=pivot.columns.tolist(),
-            y=pivot.index.tolist(),
+            z=heatmap_data,
+            x=col_labels,
+            y=year_labels,
             colorscale=[[0, '#ef4444'], [0.5, '#1A1A1A'], [1, '#10b981']],
             zmid=0,
-            text=[[f"{v:.1f}%" if pd.notna(v) else "" for v in row] for row in pivot.values],
+            text=[[f"{v:.1f}%" if pd.notna(v) else "" for v in row] for row in heatmap_data],
             texttemplate="%{text}",
             textfont=dict(size=10, color="#EAEAEA"),
             hovertemplate="Year: %{y}<br>%{x}: %{z:.2f}%<extra></extra>",
@@ -2275,12 +2313,12 @@ def render_analysis_mode(df, metrics):
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
             margin=dict(l=10, r=10, t=10, b=10),
-            xaxis=dict(side='top', tickangle=0, type='category'),
-            yaxis=dict(autorange='reversed', type='category'),
-            height=max(150, len(pivot) * 35 + 50)
+            xaxis=dict(side='top', tickangle=0, type='category', dtick=1),
+            yaxis=dict(autorange='reversed', type='category', dtick=1),
+            height=max(120, len(years) * 35 + 50)
         )
         
-        st.plotly_chart(fig_heat, use_container_width=True)
+        st.plotly_chart(fig_heat, width="stretch")
     
     # =========================================================================
     # HOLDING ATTRIBUTION
@@ -2335,7 +2373,7 @@ def render_analysis_mode(df, metrics):
             showlegend=False
         )
         
-        st.plotly_chart(fig_attr, use_container_width=True)
+        st.plotly_chart(fig_attr, width="stretch")
     
     # =========================================================================
     # STATISTICS TABLE
