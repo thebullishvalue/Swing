@@ -1481,10 +1481,8 @@ def main():
 # ANALYSIS MODE - INSTITUTIONAL GRADE ANALYTICS
 # =========================================================================
 
-BENCHMARKS = {
-    'NIFTY 50': '^NSEI',
-    'NIFTY 500': '^CRSLDX'
-}
+BENCHMARK_TICKER = '^NSEI'  # NIFTY 50 only
+BENCHMARK_NAME = 'NIFTY 50'
 
 TIMEFRAMES = {
     '1W': 7,
@@ -1500,17 +1498,40 @@ TIMEFRAMES = {
 
 @st.cache_data(ttl=300)
 def fetch_analysis_data(symbols, days_back):
-    """Fetch historical data for portfolio and benchmarks."""
+    """Fetch historical data for portfolio and NIFTY 50 benchmark.
+    Portfolio data is aligned to NIFTY 50 trading dates to avoid
+    holiday/timezone edge cases.
+    """
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days_back)
     
-    tickers = [f"{s}.NS" for s in symbols]
-    benchmark_tickers = list(BENCHMARKS.values())
-    all_tickers = tickers + benchmark_tickers
-    
     try:
-        data = yf.download(
-            tickers=all_tickers,
+        # First fetch NIFTY 50 to get valid trading dates
+        benchmark_data = yf.download(
+            tickers=BENCHMARK_TICKER,
+            start=start_date.strftime('%Y-%m-%d'),
+            end=end_date.strftime('%Y-%m-%d'),
+            interval='1d',
+            progress=False
+        )
+        
+        if benchmark_data.empty:
+            return pd.DataFrame(), pd.DataFrame()
+        
+        # Get NIFTY 50 close prices
+        benchmark_close = benchmark_data['Close']
+        if isinstance(benchmark_close, pd.DataFrame):
+            benchmark_close = benchmark_close.iloc[:, 0]
+        benchmark_df = benchmark_close.to_frame(name=BENCHMARK_NAME)
+        
+        # Get valid trading dates from NIFTY 50
+        valid_dates = benchmark_df.index
+        
+        # Now fetch portfolio holdings
+        tickers = [f"{s}.NS" for s in symbols]
+        
+        portfolio_data = yf.download(
+            tickers=tickers,
             start=start_date.strftime('%Y-%m-%d'),
             end=end_date.strftime('%Y-%m-%d'),
             interval='1d',
@@ -1518,28 +1539,24 @@ def fetch_analysis_data(symbols, days_back):
             threads=True
         )
         
-        if data.empty:
-            return pd.DataFrame(), pd.DataFrame()
+        if portfolio_data.empty:
+            return pd.DataFrame(), benchmark_df
         
-        close = data['Close']
+        # Get close prices
+        if len(tickers) == 1:
+            portfolio_close = portfolio_data['Close'].to_frame()
+            portfolio_close.columns = [symbols[0]]
+        else:
+            portfolio_close = portfolio_data['Close']
+            portfolio_close.columns = [c.replace('.NS', '') for c in portfolio_close.columns]
         
-        # Handle single ticker case
-        if len(all_tickers) == 1:
-            close = close.to_frame()
-            close.columns = all_tickers
+        # Align portfolio data to NIFTY 50 dates only
+        portfolio_aligned = portfolio_close.reindex(valid_dates)
         
-        # Split portfolio and benchmark
-        portfolio_cols = [f"{s}.NS" for s in symbols]
-        benchmark_cols = benchmark_tickers
+        # Forward fill any missing values (in case some stocks didn't trade)
+        portfolio_aligned = portfolio_aligned.ffill()
         
-        portfolio_df = close[[c for c in portfolio_cols if c in close.columns]].copy()
-        portfolio_df.columns = [c.replace('.NS', '') for c in portfolio_df.columns]
-        
-        benchmark_df = close[[c for c in benchmark_cols if c in close.columns]].copy()
-        rename_map = {v: k for k, v in BENCHMARKS.items()}
-        benchmark_df.columns = [rename_map.get(c, c) for c in benchmark_df.columns]
-        
-        return portfolio_df, benchmark_df
+        return portfolio_aligned, benchmark_df
         
     except Exception as e:
         return pd.DataFrame(), pd.DataFrame()
@@ -1704,18 +1721,8 @@ def render_analysis_mode(df, metrics):
     else:
         days_back = TIMEFRAMES[selected_tf]
     
-    # Benchmark selector
-    col_bench, col_spacer = st.columns([1, 4])
-    with col_bench:
-        benchmark_choice = st.selectbox(
-            "Benchmark",
-            options=['NIFTY 50', 'NIFTY 500', 'Both'],
-            index=0,
-            label_visibility="collapsed"
-        )
-    
     # =========================================================================
-    # FETCH DATA
+    # FETCH DATA (aligned to NIFTY 50 dates)
     # =========================================================================
     
     symbols = df['SYMBOL'].tolist()
@@ -1728,7 +1735,7 @@ def render_analysis_mode(df, metrics):
         st.error("Unable to fetch historical data. Please try again.")
         return
     
-    # Build portfolio value series
+    # Build portfolio value series (already aligned to NIFTY 50 dates)
     port_value = pd.DataFrame(index=portfolio_prices.index)
     for sym in portfolio_prices.columns:
         if sym in quantities:
@@ -1741,13 +1748,8 @@ def render_analysis_mode(df, metrics):
     
     # Get benchmark returns
     bench_returns = None
-    if not benchmark_prices.empty:
-        if benchmark_choice == 'Both':
-            bench_col = 'NIFTY 50'  # Use NIFTY 50 for metrics
-        else:
-            bench_col = benchmark_choice
-        if bench_col in benchmark_prices.columns:
-            bench_returns = benchmark_prices[bench_col].pct_change().dropna()
+    if not benchmark_prices.empty and BENCHMARK_NAME in benchmark_prices.columns:
+        bench_returns = benchmark_prices[BENCHMARK_NAME].pct_change().dropna()
     
     # Compute metrics
     m = compute_metrics(port_returns, bench_returns)
@@ -1774,25 +1776,20 @@ def render_analysis_mode(df, metrics):
         hovertemplate='%{x|%b %d, %Y}<br>Portfolio: %{y:.2f}<extra></extra>'
     ))
     
-    # Benchmark traces
-    if not benchmark_prices.empty:
-        colors = {'NIFTY 50': '#06b6d4', 'NIFTY 500': '#8b5cf6'}
-        benchmarks_to_show = ['NIFTY 50', 'NIFTY 500'] if benchmark_choice == 'Both' else [benchmark_choice]
-        
-        for bench_name in benchmarks_to_show:
-            if bench_name in benchmark_prices.columns:
-                bench_series = benchmark_prices[bench_name].dropna()
-                if len(bench_series) > 0:
-                    bench_norm = (bench_series / bench_series.iloc[0]) * 100
-                    bench_ret = ((bench_series.iloc[-1] / bench_series.iloc[0]) - 1) * 100
-                    fig.add_trace(go.Scatter(
-                        x=bench_norm.index,
-                        y=bench_norm.values,
-                        mode='lines',
-                        name=f'{bench_name} ({bench_ret:+.2f}%)',
-                        line=dict(color=colors.get(bench_name, '#888888'), width=2, dash='dot'),
-                        hovertemplate=f'%{{x|%b %d, %Y}}<br>{bench_name}: %{{y:.2f}}<extra></extra>'
-                    ))
+    # Benchmark trace (NIFTY 50 only)
+    if not benchmark_prices.empty and BENCHMARK_NAME in benchmark_prices.columns:
+        bench_series = benchmark_prices[BENCHMARK_NAME].dropna()
+        if len(bench_series) > 0:
+            bench_norm = (bench_series / bench_series.iloc[0]) * 100
+            bench_ret = ((bench_series.iloc[-1] / bench_series.iloc[0]) - 1) * 100
+            fig.add_trace(go.Scatter(
+                x=bench_norm.index,
+                y=bench_norm.values,
+                mode='lines',
+                name=f'{BENCHMARK_NAME} ({bench_ret:+.2f}%)',
+                line=dict(color='#06b6d4', width=2, dash='dot'),
+                hovertemplate=f'%{{x|%b %d, %Y}}<br>{BENCHMARK_NAME}: %{{y:.2f}}<extra></extra>'
+            ))
     
     # Layout
     fig.update_layout(
@@ -2004,7 +2001,7 @@ def render_analysis_mode(df, metrics):
             <div class='metric-card {cls}'>
                 <h4>Benchmark</h4>
                 <h2>{bench_ret:+.1f}%</h2>
-                <div class='sub-metric'>{benchmark_choice}</div>
+                <div class='sub-metric'>{BENCHMARK_NAME}</div>
             </div>
         """, unsafe_allow_html=True)
     
@@ -2256,10 +2253,13 @@ def render_analysis_mode(df, metrics):
         yearly_dict = {idx.year: val for idx, val in yearly.items()}
         pivot['YTD'] = pivot.index.map(lambda y: yearly_dict.get(y, np.nan))
         
+        # Convert year index to strings to avoid decimal display
+        pivot.index = pivot.index.astype(str)
+        
         fig_heat = go.Figure(data=go.Heatmap(
             z=pivot.values,
-            x=pivot.columns,
-            y=pivot.index,
+            x=pivot.columns.tolist(),
+            y=pivot.index.tolist(),
             colorscale=[[0, '#ef4444'], [0.5, '#1A1A1A'], [1, '#10b981']],
             zmid=0,
             text=[[f"{v:.1f}%" if pd.notna(v) else "" for v in row] for row in pivot.values],
@@ -2275,8 +2275,8 @@ def render_analysis_mode(df, metrics):
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
             margin=dict(l=10, r=10, t=10, b=10),
-            xaxis=dict(side='top', tickangle=0),
-            yaxis=dict(autorange='reversed'),
+            xaxis=dict(side='top', tickangle=0, type='category'),
+            yaxis=dict(autorange='reversed', type='category'),
             height=max(150, len(pivot) * 35 + 50)
         )
         
