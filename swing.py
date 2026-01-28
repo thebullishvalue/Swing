@@ -775,8 +775,8 @@ def main():
         </div>
     """, unsafe_allow_html=True)
     
-    # Metrics in 5 columns (added Today's Return)
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # Metrics in 4 columns (Holdings moved to dedicated tab)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.markdown(f"""
@@ -823,22 +823,13 @@ def main():
                 <div class='sub-metric'>{today_sign}{format_currency(metrics['Today Change'])}</div>
             </div>
         """, unsafe_allow_html=True)
-
-    with col5:
-        st.markdown(f"""
-            <div class='metric-card neutral'>
-                <h4>Holdings & Concentration</h4>
-                <h2 style='color: var(--text-primary);'>{metrics['Number of Holdings']} Holdings</h2>
-                <div class='sub-metric'>Top 5 concentration: {metrics['Top 5 Concentration']:.1f}%</div>
-            </div>
-        """, unsafe_allow_html=True)
     
     # =========================================================================
     # DASHBOARD VIEW (Default)
     # =========================================================================
     if view_mode == "📈 Dashboard":
         # Tabs for detailed views
-        tab1, tab2 = st.tabs(["**📊 Performance Analysis**", "**📋 Portfolio Details**"])
+        tab1, tab2, tab3 = st.tabs(["**📊 Performance Analysis**", "**📋 Portfolio Details**", "**🎯 Holdings Analytics**"])
 
         with tab1:
             # Performance Highlights
@@ -852,7 +843,7 @@ def main():
             """, unsafe_allow_html=True)
 
             # Side-by-side layout for Absolute Gain/Loss % and Weighted Return %
-            col_metrics1, col_metrics2 = st.columns([1, 1])
+            col_metrics1, col_metrics2 = st.columns(2)
 
             # Section 1: Absolute Gain/Loss %
             with col_metrics1:
@@ -861,286 +852,437 @@ def main():
 
                 with col_out1:
                     st.markdown("<h4 class='performance-subheader'>Out-Performers</h4>", unsafe_allow_html=True)
-                top_performers_gain = df.nlargest(3, 'GAIN %')
-                for _, row in top_performers_gain.iterrows():
-                    # Use CSS variables
-                    gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
-                    weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
-                    
-                    st.markdown(f"""
-                        <div class='performance-card positive'>
-                            <div class='title'>{row['SYMBOL']}</div>
-                            <div class='stats'>
-                                <span>Gain/Loss</span>
-                                <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
+                    top_performers_gain = df.nlargest(3, 'GAIN %')
+                    for _, row in top_performers_gain.iterrows():
+                        gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
+                        weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
+                        st.markdown(f"""
+                            <div class='performance-card positive'>
+                                <div class='title'>{row['SYMBOL']}</div>
+                                <div class='stats'>
+                                    <span>Gain/Loss</span>
+                                    <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
+                                </div>
+                                <div class='stats'>
+                                    <span>Weighted Return</span>
+                                    <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
+                                </div>
+                                <div class='stats'>
+                                    <span>Current Price</span>
+                                    <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
+                                </div>
                             </div>
-                            <div class='stats'>
-                                <span>Weighted Return</span>
-                                <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
-                            </div>
-                            <div class='stats'>
-                                <span>Current Price</span>
-                                <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
 
-            with col_under1:
-                st.markdown("<h4 class='performance-subheader'>Under-Performers</h4>", unsafe_allow_html=True)
-                bottom_performers_gain = df.nsmallest(3, 'GAIN %')
-                for _, row in bottom_performers_gain.iterrows():
-                    # Use CSS variables
-                    gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
-                    weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
-                    
-                    st.markdown(f"""
-                        <div class='performance-card {"positive" if row['GAIN %'] >= 0 else "negative"}'>
-                            <div class='title'>{row['SYMBOL']}</div>
-                            <div class='stats'>
-                                <span>Gain/Loss</span>
-                                <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
+                with col_under1:
+                    st.markdown("<h4 class='performance-subheader'>Under-Performers</h4>", unsafe_allow_html=True)
+                    bottom_performers_gain = df.nsmallest(3, 'GAIN %')
+                    for _, row in bottom_performers_gain.iterrows():
+                        gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
+                        weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
+                        card_class = "positive" if row['GAIN %'] >= 0 else "negative"
+                        st.markdown(f"""
+                            <div class='performance-card {card_class}'>
+                                <div class='title'>{row['SYMBOL']}</div>
+                                <div class='stats'>
+                                    <span>Gain/Loss</span>
+                                    <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
+                                </div>
+                                <div class='stats'>
+                                    <span>Weighted Return</span>
+                                    <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
+                                </div>
+                                <div class='stats'>
+                                    <span>Current Price</span>
+                                    <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
+                                </div>
                             </div>
-                            <div class='stats'>
-                                <span>Weighted Return</span>
-                                <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
-                            </div>
-                            <div class='stats'>
-                                <span>Current Price</span>
-                                <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
 
-        # Section 2: Weighted Return %
-        with col_metrics2:
-            st.markdown("<h3 class='performance-section-header'>Weighted Return %</h3>", unsafe_allow_html=True)
-            col_out2, col_under2 = st.columns(2)
+            # Section 2: Weighted Return %
+            with col_metrics2:
+                st.markdown("<h3 class='performance-section-header'>Weighted Return %</h3>", unsafe_allow_html=True)
+                col_out2, col_under2 = st.columns(2)
 
-            with col_out2:
-                st.markdown("<h4 class='performance-subheader'>Out-Performers</h4>", unsafe_allow_html=True)
-                top_performers_weighted = df.nlargest(3, 'WEIGHTED RETURN %')
-                for _, row in top_performers_weighted.iterrows():
-                    # Use CSS variables
-                    gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
-                    weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
-                    
-                    st.markdown(f"""
-                        <div class='performance-card positive'>
-                            <div class='title'>{row['SYMBOL']}</div>
-                            <div class='stats'>
-                                <span>Gain/Loss</span>
-                                <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
+                with col_out2:
+                    st.markdown("<h4 class='performance-subheader'>Out-Performers</h4>", unsafe_allow_html=True)
+                    top_performers_weighted = df.nlargest(3, 'WEIGHTED RETURN %')
+                    for _, row in top_performers_weighted.iterrows():
+                        gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
+                        weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
+                        st.markdown(f"""
+                            <div class='performance-card positive'>
+                                <div class='title'>{row['SYMBOL']}</div>
+                                <div class='stats'>
+                                    <span>Gain/Loss</span>
+                                    <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
+                                </div>
+                                <div class='stats'>
+                                    <span>Weighted Return</span>
+                                    <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
+                                </div>
+                                <div class='stats'>
+                                    <span>Current Price</span>
+                                    <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
+                                </div>
                             </div>
-                            <div class='stats'>
-                                <span>Weighted Return</span>
-                                <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
-                            </div>
-                            <div class='stats'>
-                                <span>Current Price</span>
-                                <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
 
-            with col_under2:
-                st.markdown("<h4 class='performance-subheader'>Under-Performers</h4>", unsafe_allow_html=True)
-                bottom_performers_weighted = df.nsmallest(3, 'WEIGHTED RETURN %')
-                for _, row in bottom_performers_weighted.iterrows():
-                    # Use CSS variables
-                    gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
-                    weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
-                    
-                    st.markdown(f"""
-                        <div class='performance-card {"positive" if row['WEIGHTED RETURN %'] >= 0 else "negative"}'>
-                            <div class='title'>{row['SYMBOL']}</div>
-                            <div class='stats'>
-                                <span>Gain/Loss</span>
-                                <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
+                with col_under2:
+                    st.markdown("<h4 class='performance-subheader'>Under-Performers</h4>", unsafe_allow_html=True)
+                    bottom_performers_weighted = df.nsmallest(3, 'WEIGHTED RETURN %')
+                    for _, row in bottom_performers_weighted.iterrows():
+                        gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
+                        weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
+                        card_class = "positive" if row['WEIGHTED RETURN %'] >= 0 else "negative"
+                        st.markdown(f"""
+                            <div class='performance-card {card_class}'>
+                                <div class='title'>{row['SYMBOL']}</div>
+                                <div class='stats'>
+                                    <span>Gain/Loss</span>
+                                    <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
+                                </div>
+                                <div class='stats'>
+                                    <span>Weighted Return</span>
+                                    <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
+                                </div>
+                                <div class='stats'>
+                                    <span>Current Price</span>
+                                    <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
+                                </div>
                             </div>
-                            <div class='stats'>
-                                <span>Weighted Return</span>
-                                <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
-                            </div>
-                            <div class='stats'>
-                                <span>Current Price</span>
-                                <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
 
-        # Gain/Loss Distribution Histogram
-        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-        st.markdown("""
-            <div class='section'>
-                <div class='section-header'>
-                    <h3 class='section-title'>Gain/Loss Distribution</h3>
-                    <p class='section-subtitle'>Performance across all holdings by weight rank</p>
+            # Gain/Loss Distribution Histogram
+            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+            st.markdown("""
+                <div class='section'>
+                    <div class='section-header'>
+                        <h3 class='section-title'>Gain/Loss Distribution</h3>
+                        <p class='section-subtitle'>Performance across all holdings by weight rank</p>
+                    </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Sort by weight (WT) in descending order and assign ranks
-        sorted_df = df.sort_values('WT', ascending=False).reset_index(drop=True)
-        sorted_df['Weight Rank'] = sorted_df.index + 1  # 1-based ranking
-        
-        # Create bar chart
-        fig_gain = go.Figure()
-        
-        # Calculate bar width based on number of holdings for better aesthetics
-        num_holdings = len(sorted_df)
-        bar_width = min(0.8, 15 / num_holdings) if num_holdings > 0 else 0.8
-        
-        # Add Gain/Loss % bars with values on top
-        fig_gain.add_trace(go.Bar(
-            x=sorted_df['SYMBOL'],
-            y=sorted_df['GAIN %'],
-            name='Gain/Loss %',
-            # Use CSS variable colors for markers
-            marker_color=['#10b981' if x >= 0 else '#ef4444' for x in sorted_df['GAIN %']],
-            text=[f"{x:.2f}%" for x in sorted_df['GAIN %']],
-            textposition='outside',
-            textfont=dict(color='#EAEAEA', size=12),
-            width=bar_width
-        ))
-        
-        # Dynamic scaling for y-axis with extra padding for outside labels
-        gain_min = sorted_df['GAIN %'].min()
-        gain_max = sorted_df['GAIN %'].max()
-        padding = max(abs(gain_min), abs(gain_max)) * 0.1  # 10% padding
-        extra_label_space = (gain_max - gain_min) * 0.1 if gain_max > 0 else 0
-        y_range = [gain_min - padding, gain_max + padding + extra_label_space]
-        
-        fig_gain.update_layout(
-            template='plotly_dark', # Use dark theme template
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color="#EAEAEA"),
-            margin=dict(l=0, r=0, t=20, b=0),
-            xaxis=dict(
-                gridcolor='rgba(255,255,255,0.1)', 
-                title='Symbol (Ordered by Weight Rank)',
-                tickangle=45,
-                showgrid=False
-            ),
-            yaxis=dict(
-                gridcolor='rgba(255,255,255,0.05)', 
-                title='Gain/Loss (%)',
-                range=y_range
-            ),
-            showlegend=False,
-            height=500,
-            bargap=0.15
-        )
-        # Apply Streamlit width fix
-        st.plotly_chart(fig_gain, width='stretch')
+            """, unsafe_allow_html=True)
+            
+            # Sort by weight (WT) in descending order and assign ranks
+            sorted_df = df.sort_values('WT', ascending=False).reset_index(drop=True)
+            sorted_df['Weight Rank'] = sorted_df.index + 1  # 1-based ranking
+            
+            # Create bar chart
+            fig_gain = go.Figure()
+            
+            # Calculate bar width based on number of holdings for better aesthetics
+            num_holdings = len(sorted_df)
+            bar_width = min(0.8, 15 / num_holdings) if num_holdings > 0 else 0.8
+            
+            # Add Gain/Loss % bars with values on top
+            fig_gain.add_trace(go.Bar(
+                x=sorted_df['SYMBOL'],
+                y=sorted_df['GAIN %'],
+                name='Gain/Loss %',
+                marker_color=['#10b981' if x >= 0 else '#ef4444' for x in sorted_df['GAIN %']],
+                text=[f"{x:.2f}%" for x in sorted_df['GAIN %']],
+                textposition='outside',
+                textfont=dict(color='#EAEAEA', size=12),
+                width=bar_width
+            ))
+            
+            # Dynamic scaling for y-axis with extra padding for outside labels
+            gain_min = sorted_df['GAIN %'].min()
+            gain_max = sorted_df['GAIN %'].max()
+            padding = max(abs(gain_min), abs(gain_max)) * 0.1
+            extra_label_space = (gain_max - gain_min) * 0.1 if gain_max > 0 else 0
+            y_range = [gain_min - padding, gain_max + padding + extra_label_space]
+            
+            fig_gain.update_layout(
+                template='plotly_dark',
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color="#EAEAEA"),
+                margin=dict(l=0, r=0, t=20, b=0),
+                xaxis=dict(
+                    gridcolor='rgba(255,255,255,0.1)', 
+                    title='Symbol (Ordered by Weight Rank)',
+                    tickangle=45,
+                    showgrid=False
+                ),
+                yaxis=dict(
+                    gridcolor='rgba(255,255,255,0.05)', 
+                    title='Gain/Loss (%)',
+                    range=y_range
+                ),
+                showlegend=False,
+                height=500,
+                bargap=0.15
+            )
+            st.plotly_chart(fig_gain, width='stretch')
 
-        # Portfolio Composition Treemap
-        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-        st.markdown("""
-            <div class='section'>
-                <div class='section-header'>
-                    <h3 class='section-title'>Portfolio Composition</h3>
-                    <p class='section-subtitle'>Asset allocation by current value</p>
+            # Portfolio Composition Treemap
+            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+            st.markdown("""
+                <div class='section'>
+                    <div class='section-header'>
+                        <h3 class='section-title'>Portfolio Composition</h3>
+                        <p class='section-subtitle'>Asset allocation by current value</p>
+                    </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # --- LOGIC FOR DYNAMIC COLOR SCALE ---
-        min_gain_pct = df['GAIN %'].min()
-        max_gain_pct = df['GAIN %'].max()
-        
-        color_scale_config = {}
-        
-        if min_gain_pct >= 0:
-            # All positive: Sequential scale (Gold/Amber to Green)
-            color_scale_config['color_continuous_scale'] = ['#FFC300', '#10b981']
-            color_scale_config['range_color'] = [min_gain_pct, max_gain_pct]
-        elif max_gain_pct <= 0:
-            # All negative: Sequential scale (Red to Darker Red)
-            color_scale_config['color_continuous_scale'] = ['#f87171', '#ef4444']
-            color_scale_config['range_color'] = [min_gain_pct, max_gain_pct]
-        else:
-            # Mixed: Diverging scale centered at 0 (Red -> Gold/Neutral -> Green)
-            color_scale_config['color_continuous_scale'] = ['#ef4444', '#FFC300', '#10b981']
-            color_scale_config['color_continuous_midpoint'] = 0
-        # --- END OF NEW LOGIC ---
-        
-        fig_treemap = px.treemap(
-            df,
-            path=['SYMBOL'],
-            values='CURR. VALUE',
-            color='GAIN %',
-            **color_scale_config 
-        )
-        fig_treemap.update_layout(
-            margin=dict(t=0, l=0, r=0, b=0),
-            paper_bgcolor='rgba(0,0,0,0)',
-            font_color='#EAEAEA'
-        )
-        # Apply Streamlit width fix
-        st.plotly_chart(fig_treemap, width='stretch')
+            """, unsafe_allow_html=True)
+            
+            # Dynamic color scale logic
+            min_gain_pct = df['GAIN %'].min()
+            max_gain_pct = df['GAIN %'].max()
+            
+            color_scale_config = {}
+            
+            if min_gain_pct >= 0:
+                color_scale_config['color_continuous_scale'] = ['#FFC300', '#10b981']
+                color_scale_config['range_color'] = [min_gain_pct, max_gain_pct]
+            elif max_gain_pct <= 0:
+                color_scale_config['color_continuous_scale'] = ['#f87171', '#ef4444']
+                color_scale_config['range_color'] = [min_gain_pct, max_gain_pct]
+            else:
+                color_scale_config['color_continuous_scale'] = ['#ef4444', '#FFC300', '#10b981']
+                color_scale_config['color_continuous_midpoint'] = 0
+            
+            fig_treemap = px.treemap(
+                df,
+                path=['SYMBOL'],
+                values='CURR. VALUE',
+                color='GAIN %',
+                **color_scale_config 
+            )
+            fig_treemap.update_layout(
+                margin=dict(t=0, l=0, r=0, b=0),
+                paper_bgcolor='rgba(0,0,0,0)',
+                font_color='#EAEAEA'
+            )
+            st.plotly_chart(fig_treemap, width='stretch')
 
-    with tab2:
-        # Portfolio Holdings Table
-        st.markdown("""
-            <div class='section'>
-                <div class='section-header'>
-                    <h3 class='section-title'>Portfolio Holdings</h3>
-                    <p class='section-subtitle'>Detailed view of all investments (Current Price is near real-time)</p>
+        with tab2:
+            # Portfolio Holdings Table
+            st.markdown("""
+                <div class='section'>
+                    <div class='section-header'>
+                        <h3 class='section-title'>Portfolio Holdings</h3>
+                        <p class='section-subtitle'>Detailed view of all investments (Current Price is near real-time)</p>
+                    </div>
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        display_df = df[['ASSET NAME', 'SYMBOL', 'QUANTITY', 'AVERAGE PRICE', 'INVESTED', 
-                         'CURRENT PRICE', 'CURR. VALUE', 'GAIN', 'GAIN %', 'WT']].copy()
-        
-        # Add rank column
-        display_df['RANK'] = display_df['CURR. VALUE'].rank(ascending=False).astype(int)
-        display_df = display_df.sort_values('RANK')
-        
-        # Format columns using CSS variables for colors
-        display_df['AVERAGE PRICE'] = display_df['AVERAGE PRICE'].apply(format_currency)
-        display_df['INVESTED'] = display_df['INVESTED'].apply(format_currency)
-        
-        # Display the real-time fetched price
-        display_df['CURRENT PRICE'] = display_df['CURRENT PRICE'].apply(format_currency)
-        
-        def format_gain(x):
-            color = 'var(--success-green)' if x >= 0 else 'var(--danger-red)'
-            return f"<span style='color: {color}'>{format_currency(x)}</span>"
-        
-        def format_gain_pct(x):
-            color = 'var(--success-green)' if x >= 0 else 'var(--danger-red)'
-            return f"<span style='color: {color}'>{x:.2f}%</span>"
+            """, unsafe_allow_html=True)
+            
+            display_df = df[['ASSET NAME', 'SYMBOL', 'QUANTITY', 'AVERAGE PRICE', 'INVESTED', 
+                             'CURRENT PRICE', 'CURR. VALUE', 'GAIN', 'GAIN %', 'WT']].copy()
+            
+            # Add rank column
+            display_df['RANK'] = display_df['CURR. VALUE'].rank(ascending=False).astype(int)
+            display_df = display_df.sort_values('RANK')
+            
+            # Format columns
+            display_df['AVERAGE PRICE'] = display_df['AVERAGE PRICE'].apply(format_currency)
+            display_df['INVESTED'] = display_df['INVESTED'].apply(format_currency)
+            display_df['CURRENT PRICE'] = display_df['CURRENT PRICE'].apply(format_currency)
+            
+            def format_gain(x):
+                color = 'var(--success-green)' if x >= 0 else 'var(--danger-red)'
+                return f"<span style='color: {color}'>{format_currency(x)}</span>"
+            
+            def format_gain_pct(x):
+                color = 'var(--success-green)' if x >= 0 else 'var(--danger-red)'
+                return f"<span style='color: {color}'>{x:.2f}%</span>"
 
-        display_df['CURR. VALUE'] = display_df['CURR. VALUE'].apply(format_currency)
-        display_df['GAIN'] = display_df['GAIN'].apply(format_gain)
-        display_df['GAIN %'] = display_df['GAIN %'].apply(format_gain_pct)
-        display_df['WT'] = display_df['WT'].apply(lambda x: f"{x:.2f}%")
+            display_df['CURR. VALUE'] = display_df['CURR. VALUE'].apply(format_currency)
+            display_df['GAIN'] = display_df['GAIN'].apply(format_gain)
+            display_df['GAIN %'] = display_df['GAIN %'].apply(format_gain_pct)
+            display_df['WT'] = display_df['WT'].apply(lambda x: f"{x:.2f}%")
+            
+            display_cols = ['RANK', 'ASSET NAME', 'SYMBOL', 'QUANTITY', 'AVERAGE PRICE', 'CURRENT PRICE', 
+                           'INVESTED', 'CURR. VALUE', 'GAIN', 'GAIN %', 'WT']
+            display_df = display_df[display_cols]
+            
+            st.markdown(f"""
+                <div class='table-container'>
+                    <table class='table'>
+                        {display_df.to_html(escape=False, index=False, classes='table')}
+                    </table>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Export button
+            excel_data = to_excel(df)
+            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+            st.download_button(
+                "Export Raw Portfolio Data (Excel)",
+                excel_data,
+                file_name=f"Swing_portfolio_details_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheet.sheet"
+            )
         
-        # Reorder columns
-        display_cols = ['RANK', 'ASSET NAME', 'SYMBOL', 'QUANTITY', 'AVERAGE PRICE', 'CURRENT PRICE', 
-                       'INVESTED', 'CURR. VALUE', 'GAIN', 'GAIN %', 'WT']
-        display_df = display_df[display_cols]
-        
-        # Display table with HTML styling, using the table-container wrapper
-        st.markdown(f"""
-            <div class='table-container'>
-                <table class='table'>
-                    {display_df.to_html(escape=False, index=False, classes='table')}
-                </table>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Export button for convenience in this tab too
-        excel_data = to_excel(df)
-        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-        st.download_button(
-            "Export Raw Portfolio Data (Excel)",
-            excel_data,
-            file_name=f"Swing_portfolio_details_{datetime.now().strftime('%Y%m%d')}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheet.sheet"
-        )
+        with tab3:
+            # Holdings Analytics Tab
+            st.markdown("""
+                <div class='section'>
+                    <div class='section-header'>
+                        <h3 class='section-title'>Holdings Analytics</h3>
+                        <p class='section-subtitle'>Advanced portfolio concentration and diversification metrics</p>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Key metrics cards
+            col_h1, col_h2, col_h3, col_h4 = st.columns(4)
+            
+            with col_h1:
+                st.markdown(f"""
+                    <div class='metric-card primary'>
+                        <h4>Total Holdings</h4>
+                        <h2>{metrics['Number of Holdings']}</h2>
+                        <div class='sub-metric'>Unique positions</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with col_h2:
+                st.markdown(f"""
+                    <div class='metric-card warning'>
+                        <h4>Top 5 Concentration</h4>
+                        <h2>{metrics['Top 5 Concentration']:.1f}%</h2>
+                        <div class='sub-metric'>of portfolio value</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with col_h3:
+                top_10_conc = df['WT'].nlargest(10).sum()
+                st.markdown(f"""
+                    <div class='metric-card info'>
+                        <h4>Top 10 Concentration</h4>
+                        <h2>{top_10_conc:.1f}%</h2>
+                        <div class='sub-metric'>of portfolio value</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with col_h4:
+                # Herfindahl-Hirschman Index (HHI) for concentration
+                hhi = (df['WT'] ** 2).sum()
+                effective_holdings = 10000 / hhi if hhi > 0 else 0
+                st.markdown(f"""
+                    <div class='metric-card neutral'>
+                        <h4>Effective Holdings</h4>
+                        <h2>{effective_holdings:.1f}</h2>
+                        <div class='sub-metric'>HHI: {hhi:.0f}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+            
+            # Concentration breakdown
+            col_conc1, col_conc2 = st.columns(2)
+            
+            with col_conc1:
+                st.markdown("### Weight Distribution")
+                
+                # Create weight distribution chart
+                sorted_by_weight = df.sort_values('WT', ascending=False)
+                
+                fig_weight = go.Figure()
+                fig_weight.add_trace(go.Bar(
+                    x=sorted_by_weight['SYMBOL'],
+                    y=sorted_by_weight['WT'],
+                    marker_color='#FFC300',
+                    text=[f"{x:.1f}%" for x in sorted_by_weight['WT']],
+                    textposition='outside',
+                    textfont=dict(color='#EAEAEA', size=10)
+                ))
+                
+                fig_weight.update_layout(
+                    template='plotly_dark',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color="#EAEAEA"),
+                    margin=dict(l=0, r=0, t=30, b=0),
+                    xaxis=dict(title='Symbol', tickangle=45, gridcolor='rgba(255,255,255,0.05)'),
+                    yaxis=dict(title='Weight (%)', gridcolor='rgba(255,255,255,0.05)'),
+                    height=350,
+                    showlegend=False
+                )
+                st.plotly_chart(fig_weight, width='stretch')
+            
+            with col_conc2:
+                st.markdown("### Cumulative Weight")
+                
+                # Cumulative weight chart
+                sorted_by_weight['Cumulative WT'] = sorted_by_weight['WT'].cumsum()
+                
+                fig_cum = go.Figure()
+                fig_cum.add_trace(go.Scatter(
+                    x=list(range(1, len(sorted_by_weight) + 1)),
+                    y=sorted_by_weight['Cumulative WT'],
+                    mode='lines+markers',
+                    line=dict(color='#FFC300', width=2),
+                    marker=dict(size=6),
+                    fill='tozeroy',
+                    fillcolor='rgba(255, 195, 0, 0.1)'
+                ))
+                
+                # Add reference lines
+                fig_cum.add_hline(y=50, line_dash="dash", line_color="#888888", 
+                                 annotation_text="50%", annotation_position="right")
+                fig_cum.add_hline(y=80, line_dash="dash", line_color="#888888",
+                                 annotation_text="80%", annotation_position="right")
+                
+                fig_cum.update_layout(
+                    template='plotly_dark',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color="#EAEAEA"),
+                    margin=dict(l=0, r=0, t=30, b=0),
+                    xaxis=dict(title='Number of Holdings', gridcolor='rgba(255,255,255,0.05)'),
+                    yaxis=dict(title='Cumulative Weight (%)', gridcolor='rgba(255,255,255,0.05)', range=[0, 105]),
+                    height=350,
+                    showlegend=False
+                )
+                st.plotly_chart(fig_cum, width='stretch')
+            
+            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+            
+            # Additional metrics table
+            st.markdown("### Portfolio Statistics")
+            
+            # Calculate additional stats
+            profitable_holdings = (df['GAIN %'] > 0).sum()
+            losing_holdings = (df['GAIN %'] < 0).sum()
+            avg_gain = df['GAIN %'].mean()
+            median_gain = df['GAIN %'].median()
+            avg_weight = df['WT'].mean()
+            max_weight = df['WT'].max()
+            min_weight = df['WT'].min()
+            
+            stats_col1, stats_col2, stats_col3 = st.columns(3)
+            
+            with stats_col1:
+                st.markdown(f"""
+                    <div class='info-box'>
+                        <h4>Performance Split</h4>
+                        <p><span style='color: var(--success-green);'>Profitable: {profitable_holdings}</span> | 
+                           <span style='color: var(--danger-red);'>Losing: {losing_holdings}</span></p>
+                        <p>Win Rate: <strong>{profitable_holdings / len(df) * 100:.1f}%</strong></p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with stats_col2:
+                st.markdown(f"""
+                    <div class='info-box'>
+                        <h4>Return Statistics</h4>
+                        <p>Average Gain: <strong>{avg_gain:.2f}%</strong></p>
+                        <p>Median Gain: <strong>{median_gain:.2f}%</strong></p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with stats_col3:
+                st.markdown(f"""
+                    <div class='info-box'>
+                        <h4>Weight Statistics</h4>
+                        <p>Average: <strong>{avg_weight:.2f}%</strong></p>
+                        <p>Range: <strong>{min_weight:.2f}% - {max_weight:.2f}%</strong></p>
+                    </div>
+                """, unsafe_allow_html=True)
     
     # =========================================================================
     # ANALYSIS MODE
