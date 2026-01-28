@@ -1,22 +1,36 @@
 # SWING (स्विंग) - Portfolio Tracker
 
-**A Hemrek Capital Product**
+**A Hemrek Capital Product | v1.1.0**
 
-Real-time ETF portfolio analytics with performance tracking. Time series analysis and historical performance insights for Indian market ETFs.
+Real-time ETF portfolio analytics with institutional-grade performance tracking and benchmark comparison.
 
 ## Features
 
-- **Real-Time Prices**: Live price fetching from Yahoo Finance
-- **Today's Return**: Daily P&L tracking with previous close comparison
-- **Portfolio Snapshot**: Total value, gains, returns, concentration metrics
-- **Performance Highlights**: Top/bottom performers by absolute and weighted returns
-- **Analysis Mode**: Historical time series analysis with multiple periods
-  - Period returns (1W, 1M, 3M, 6M, YTD, 1Y, 2Y)
-  - Volatility and Sharpe Ratio
-  - Max Drawdown analysis
-  - Win Rate statistics
-  - Daily returns distribution
-  - Individual holding performance
+### Dashboard Mode
+- **Portfolio Snapshot**: Total value, gains, returns, today's return
+- **Performance Analysis**: Top/bottom performers, gain distribution, treemap
+- **Portfolio Details**: Complete holdings table with export
+
+### Holdings Analytics (Institutional Grade)
+- **Concentration Metrics**: HHI, Effective N, Gini Coefficient, Top 5/10 concentration
+- **Performance Distribution**: Win rate, average/median returns, dispersion
+- **Risk Contribution**: Weight-based risk decomposition
+- **Concentration Curve**: Lorenz curve visualization
+- **Treemap**: Visual weight/return distribution
+
+### Analysis Mode (Bloomberg Terminal Grade)
+- **Interactive Chart**: Portfolio vs Benchmark (NIFTY 50, NIFTY 500)
+- **Timeframe Buttons**: 1W, 1M, 3M, 6M, YTD, 1Y, 2Y, 5Y, MAX
+- **Risk-Adjusted Metrics**: 
+  - Sharpe, Sortino, Calmar, Information Ratio, Treynor
+  - Alpha, Beta, R-Squared, Correlation
+  - VaR (95%, 99%), CVaR, Tracking Error
+  - Up/Down Capture Ratios
+- **Drawdown Analysis**: Interactive drawdown chart with max DD marker
+- **Returns Distribution**: Histogram with VaR overlay
+- **Rolling Analytics**: 63-day rolling Sharpe and Beta
+- **Monthly Heatmap**: Year x Month returns matrix with YTD
+- **Holding Attribution**: Individual contribution to portfolio return
 
 ## Installation
 
@@ -43,6 +57,14 @@ Place your portfolio data in `ETF Summary Report.xlsx` with columns:
 - QUANTITY
 - AVERAGE PRICE
 
-## Version
+## Hemrek Capital Design System
 
-v1.1.0 - Hemrek Capital Design System
+- Golden accent theme (#FFC300)
+- Dark mode interface
+- Consistent with NIRNAY, AARAMBH, ARTHAGATI, PRAGYAM
+- Dynamic IST footer timestamp
+
+## Version History
+
+- v1.1.0: Institutional-grade analytics, benchmark comparison, advanced metrics
+- v1.0.0: Initial release
