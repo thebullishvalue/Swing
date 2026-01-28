@@ -1117,172 +1117,349 @@ def main():
             )
         
         with tab3:
-            # Holdings Analytics Tab
+            # Holdings Analytics Tab - Institutional Grade
             st.markdown("""
                 <div class='section'>
                     <div class='section-header'>
                         <h3 class='section-title'>Holdings Analytics</h3>
-                        <p class='section-subtitle'>Advanced portfolio concentration and diversification metrics</p>
+                        <p class='section-subtitle'>Institutional-grade concentration, diversification & risk decomposition</p>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
             
-            # Key metrics cards
-            col_h1, col_h2, col_h3, col_h4 = st.columns(4)
+            # Calculate advanced metrics
+            n_holdings = len(df)
+            weights = df['WT'].values / 100  # Convert to decimal
+            returns = df['GAIN %'].values / 100
             
-            with col_h1:
+            # Concentration metrics
+            hhi = (df['WT'] ** 2).sum()
+            effective_n = 10000 / hhi if hhi > 0 else n_holdings
+            gini = 0
+            if n_holdings > 1:
+                sorted_weights = np.sort(weights)
+                cum_weights = np.cumsum(sorted_weights)
+                gini = 1 - 2 * np.sum(cum_weights) / (n_holdings * cum_weights[-1]) if cum_weights[-1] > 0 else 0
+            
+            # Diversification ratio (simplified)
+            avg_weight = weights.mean()
+            weight_std = weights.std()
+            div_ratio = 1 / (hhi / 10000) if hhi > 0 else n_holdings
+            
+            # Row 1: Concentration Metrics
+            st.markdown("#### Concentration Metrics")
+            c1, c2, c3, c4, c5, c6 = st.columns(6)
+            
+            with c1:
                 st.markdown(f"""
                     <div class='metric-card primary'>
-                        <h4>Total Holdings</h4>
-                        <h2>{metrics['Number of Holdings']}</h2>
+                        <h4>Holdings</h4>
+                        <h2>{n_holdings}</h2>
                         <div class='sub-metric'>Unique positions</div>
                     </div>
                 """, unsafe_allow_html=True)
             
-            with col_h2:
+            with c2:
+                top5 = metrics['Top 5 Concentration']
+                cls = 'warning' if top5 > 60 else 'success'
                 st.markdown(f"""
-                    <div class='metric-card warning'>
-                        <h4>Top 5 Concentration</h4>
-                        <h2>{metrics['Top 5 Concentration']:.1f}%</h2>
-                        <div class='sub-metric'>of portfolio value</div>
+                    <div class='metric-card {cls}'>
+                        <h4>Top 5</h4>
+                        <h2>{top5:.1f}%</h2>
+                        <div class='sub-metric'>Concentration</div>
                     </div>
                 """, unsafe_allow_html=True)
             
-            with col_h3:
-                top_10_conc = df['WT'].nlargest(10).sum()
+            with c3:
+                top10 = df['WT'].nlargest(10).sum()
+                cls = 'warning' if top10 > 80 else 'success'
+                st.markdown(f"""
+                    <div class='metric-card {cls}'>
+                        <h4>Top 10</h4>
+                        <h2>{top10:.1f}%</h2>
+                        <div class='sub-metric'>Concentration</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c4:
                 st.markdown(f"""
                     <div class='metric-card info'>
-                        <h4>Top 10 Concentration</h4>
-                        <h2>{top_10_conc:.1f}%</h2>
-                        <div class='sub-metric'>of portfolio value</div>
+                        <h4>Effective N</h4>
+                        <h2>{effective_n:.1f}</h2>
+                        <div class='sub-metric'>1/HHI equivalent</div>
                     </div>
                 """, unsafe_allow_html=True)
             
-            with col_h4:
-                # Herfindahl-Hirschman Index (HHI) for concentration
-                hhi = (df['WT'] ** 2).sum()
-                effective_holdings = 10000 / hhi if hhi > 0 else 0
+            with c5:
+                cls = 'warning' if hhi > 1500 else 'success'
+                st.markdown(f"""
+                    <div class='metric-card {cls}'>
+                        <h4>HHI</h4>
+                        <h2>{hhi:.0f}</h2>
+                        <div class='sub-metric'><1500 = diverse</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c6:
                 st.markdown(f"""
                     <div class='metric-card neutral'>
-                        <h4>Effective Holdings</h4>
-                        <h2>{effective_holdings:.1f}</h2>
-                        <div class='sub-metric'>HHI: {hhi:.0f}</div>
+                        <h4>Gini Coeff</h4>
+                        <h2>{gini:.2f}</h2>
+                        <div class='sub-metric'>0=equal, 1=conc</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Row 2: Performance Distribution
+            st.markdown("#### Performance Distribution")
+            c1, c2, c3, c4, c5, c6 = st.columns(6)
+            
+            profitable = (df['GAIN %'] > 0).sum()
+            losing = (df['GAIN %'] < 0).sum()
+            breakeven = n_holdings - profitable - losing
+            win_rate = profitable / n_holdings * 100 if n_holdings > 0 else 0
+            
+            with c1:
+                st.markdown(f"""
+                    <div class='metric-card success'>
+                        <h4>Winners</h4>
+                        <h2>{profitable}</h2>
+                        <div class='sub-metric'>Profitable</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c2:
+                st.markdown(f"""
+                    <div class='metric-card danger'>
+                        <h4>Losers</h4>
+                        <h2>{losing}</h2>
+                        <div class='sub-metric'>Underwater</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c3:
+                cls = 'success' if win_rate > 60 else 'warning' if win_rate > 40 else 'danger'
+                st.markdown(f"""
+                    <div class='metric-card {cls}'>
+                        <h4>Win Rate</h4>
+                        <h2>{win_rate:.0f}%</h2>
+                        <div class='sub-metric'>Batting avg</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c4:
+                avg_gain = df['GAIN %'].mean()
+                cls = 'success' if avg_gain > 0 else 'danger'
+                st.markdown(f"""
+                    <div class='metric-card {cls}'>
+                        <h4>Avg Return</h4>
+                        <h2>{avg_gain:+.1f}%</h2>
+                        <div class='sub-metric'>Mean gain</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c5:
+                median_gain = df['GAIN %'].median()
+                cls = 'success' if median_gain > 0 else 'danger'
+                st.markdown(f"""
+                    <div class='metric-card {cls}'>
+                        <h4>Median Return</h4>
+                        <h2>{median_gain:+.1f}%</h2>
+                        <div class='sub-metric'>50th percentile</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c6:
+                gain_std = df['GAIN %'].std()
+                st.markdown(f"""
+                    <div class='metric-card warning'>
+                        <h4>Return Dispersion</h4>
+                        <h2>{gain_std:.1f}%</h2>
+                        <div class='sub-metric'>Std deviation</div>
                     </div>
                 """, unsafe_allow_html=True)
             
             st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
             
-            # Concentration breakdown
-            col_conc1, col_conc2 = st.columns(2)
+            # Charts Row
+            col_pie, col_lorenz = st.columns(2)
             
-            with col_conc1:
-                st.markdown("### Weight Distribution")
+            with col_pie:
+                st.markdown("#### Weight Distribution")
                 
-                # Create weight distribution chart
-                sorted_by_weight = df.sort_values('WT', ascending=False)
+                # Treemap for weight distribution
+                fig_tree = px.treemap(
+                    df,
+                    path=['SYMBOL'],
+                    values='WT',
+                    color='GAIN %',
+                    color_continuous_scale=['#ef4444', '#FFC300', '#10b981'],
+                    color_continuous_midpoint=0
+                )
+                fig_tree.update_layout(
+                    margin=dict(t=10, l=10, r=10, b=10),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font_color='#EAEAEA',
+                    height=320
+                )
+                fig_tree.update_coloraxes(showscale=False)
+                st.plotly_chart(fig_tree, use_container_width=True)
+            
+            with col_lorenz:
+                st.markdown("#### Concentration Curve")
                 
-                fig_weight = go.Figure()
-                fig_weight.add_trace(go.Bar(
-                    x=sorted_by_weight['SYMBOL'],
-                    y=sorted_by_weight['WT'],
-                    marker_color='#FFC300',
-                    text=[f"{x:.1f}%" for x in sorted_by_weight['WT']],
-                    textposition='outside',
-                    textfont=dict(color='#EAEAEA', size=10)
+                # Lorenz curve
+                sorted_weights = np.sort(df['WT'].values)[::-1]
+                cum_weights = np.cumsum(sorted_weights)
+                n = len(sorted_weights)
+                
+                fig_lorenz = go.Figure()
+                
+                # Perfect equality line
+                fig_lorenz.add_trace(go.Scatter(
+                    x=list(range(n + 1)),
+                    y=[0] + list(np.linspace(0, 100, n)),
+                    mode='lines',
+                    name='Equal Weight',
+                    line=dict(color='#888888', dash='dash', width=1)
                 ))
                 
-                fig_weight.update_layout(
-                    template='plotly_dark',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color="#EAEAEA"),
-                    margin=dict(l=0, r=0, t=30, b=0),
-                    xaxis=dict(title='Symbol', tickangle=45, gridcolor='rgba(255,255,255,0.05)'),
-                    yaxis=dict(title='Weight (%)', gridcolor='rgba(255,255,255,0.05)'),
-                    height=350,
-                    showlegend=False
-                )
-                st.plotly_chart(fig_weight, width='stretch')
-            
-            with col_conc2:
-                st.markdown("### Cumulative Weight")
-                
-                # Cumulative weight chart
-                sorted_by_weight['Cumulative WT'] = sorted_by_weight['WT'].cumsum()
-                
-                fig_cum = go.Figure()
-                fig_cum.add_trace(go.Scatter(
-                    x=list(range(1, len(sorted_by_weight) + 1)),
-                    y=sorted_by_weight['Cumulative WT'],
+                # Actual concentration curve
+                fig_lorenz.add_trace(go.Scatter(
+                    x=list(range(n + 1)),
+                    y=[0] + list(cum_weights),
                     mode='lines+markers',
+                    name='Portfolio',
                     line=dict(color='#FFC300', width=2),
-                    marker=dict(size=6),
-                    fill='tozeroy',
-                    fillcolor='rgba(255, 195, 0, 0.1)'
+                    marker=dict(size=4),
+                    fill='tonexty',
+                    fillcolor='rgba(255, 195, 0, 0.15)'
                 ))
                 
-                # Add reference lines
-                fig_cum.add_hline(y=50, line_dash="dash", line_color="#888888", 
-                                 annotation_text="50%", annotation_position="right")
-                fig_cum.add_hline(y=80, line_dash="dash", line_color="#888888",
-                                 annotation_text="80%", annotation_position="right")
+                # Key thresholds
+                fig_lorenz.add_hline(y=50, line_dash="dot", line_color="#10b981", 
+                                    annotation_text="50%", annotation_position="right")
+                fig_lorenz.add_hline(y=80, line_dash="dot", line_color="#06b6d4",
+                                    annotation_text="80%", annotation_position="right")
                 
-                fig_cum.update_layout(
+                fig_lorenz.update_layout(
                     template='plotly_dark',
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                     font=dict(color="#EAEAEA"),
-                    margin=dict(l=0, r=0, t=30, b=0),
-                    xaxis=dict(title='Number of Holdings', gridcolor='rgba(255,255,255,0.05)'),
+                    margin=dict(l=10, r=10, t=10, b=10),
+                    xaxis=dict(title='# Holdings (ranked)', gridcolor='rgba(255,255,255,0.05)'),
                     yaxis=dict(title='Cumulative Weight (%)', gridcolor='rgba(255,255,255,0.05)', range=[0, 105]),
-                    height=350,
-                    showlegend=False
+                    height=320,
+                    showlegend=True,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
                 )
-                st.plotly_chart(fig_cum, width='stretch')
+                st.plotly_chart(fig_lorenz, use_container_width=True)
             
             st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
             
-            # Additional metrics table
-            st.markdown("### Portfolio Statistics")
+            # Risk Contribution Table
+            st.markdown("#### Risk & Return Contribution")
             
-            # Calculate additional stats
-            profitable_holdings = (df['GAIN %'] > 0).sum()
-            losing_holdings = (df['GAIN %'] < 0).sum()
-            avg_gain = df['GAIN %'].mean()
-            median_gain = df['GAIN %'].median()
-            avg_weight = df['WT'].mean()
-            max_weight = df['WT'].max()
-            min_weight = df['WT'].min()
+            # Calculate contribution metrics
+            contrib_df = df[['SYMBOL', 'ASSET NAME', 'WT', 'GAIN %', 'WEIGHTED RETURN %']].copy()
+            contrib_df['Weight'] = contrib_df['WT'].apply(lambda x: f"{x:.2f}%")
+            contrib_df['Return'] = contrib_df['GAIN %'].apply(lambda x: f"{x:+.2f}%")
+            contrib_df['Contribution'] = contrib_df['WEIGHTED RETURN %'].apply(lambda x: f"{x:+.3f}%")
             
-            stats_col1, stats_col2, stats_col3 = st.columns(3)
+            # Risk contribution (simplified - weight^2 as proxy)
+            contrib_df['Risk Weight'] = (contrib_df['WT'] ** 2) / hhi * 100
+            contrib_df['Risk Contrib'] = contrib_df['Risk Weight'].apply(lambda x: f"{x:.1f}%")
             
-            with stats_col1:
-                st.markdown(f"""
-                    <div class='info-box'>
-                        <h4>Performance Split</h4>
-                        <p><span style='color: var(--success-green);'>Profitable: {profitable_holdings}</span> | 
-                           <span style='color: var(--danger-red);'>Losing: {losing_holdings}</span></p>
-                        <p>Win Rate: <strong>{profitable_holdings / len(df) * 100:.1f}%</strong></p>
-                    </div>
-                """, unsafe_allow_html=True)
+            # Sort by contribution
+            contrib_df = contrib_df.sort_values('WEIGHTED RETURN %', ascending=False)
             
-            with stats_col2:
-                st.markdown(f"""
-                    <div class='info-box'>
-                        <h4>Return Statistics</h4>
-                        <p>Average Gain: <strong>{avg_gain:.2f}%</strong></p>
-                        <p>Median Gain: <strong>{median_gain:.2f}%</strong></p>
-                    </div>
-                """, unsafe_allow_html=True)
+            # Create horizontal bar chart
+            fig_contrib = make_subplots(rows=1, cols=2, shared_yaxes=True,
+                                       subplot_titles=('Return Contribution', 'Risk Contribution'),
+                                       horizontal_spacing=0.02)
             
-            with stats_col3:
-                st.markdown(f"""
-                    <div class='info-box'>
-                        <h4>Weight Statistics</h4>
-                        <p>Average: <strong>{avg_weight:.2f}%</strong></p>
-                        <p>Range: <strong>{min_weight:.2f}% - {max_weight:.2f}%</strong></p>
-                    </div>
-                """, unsafe_allow_html=True)
+            colors_ret = ['#10b981' if x >= 0 else '#ef4444' for x in contrib_df['WEIGHTED RETURN %']]
+            
+            fig_contrib.add_trace(go.Bar(
+                y=contrib_df['SYMBOL'],
+                x=contrib_df['WEIGHTED RETURN %'],
+                orientation='h',
+                marker_color=colors_ret,
+                text=[f"{x:.2f}%" for x in contrib_df['WEIGHTED RETURN %']],
+                textposition='outside',
+                textfont=dict(size=9),
+                showlegend=False
+            ), row=1, col=1)
+            
+            fig_contrib.add_trace(go.Bar(
+                y=contrib_df['SYMBOL'],
+                x=contrib_df['Risk Weight'],
+                orientation='h',
+                marker_color='#FFC300',
+                text=[f"{x:.1f}%" for x in contrib_df['Risk Weight']],
+                textposition='outside',
+                textfont=dict(size=9),
+                showlegend=False
+            ), row=1, col=2)
+            
+            fig_contrib.update_layout(
+                template='plotly_dark',
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color="#EAEAEA", size=10),
+                margin=dict(l=10, r=60, t=40, b=10),
+                height=max(350, n_holdings * 22 + 60),
+                showlegend=False
+            )
+            
+            fig_contrib.update_xaxes(gridcolor='rgba(255,255,255,0.05)')
+            fig_contrib.update_yaxes(gridcolor='rgba(255,255,255,0.05)')
+            
+            st.plotly_chart(fig_contrib, use_container_width=True)
+            
+            # Summary Statistics in expander
+            with st.expander("📊 Detailed Statistics", expanded=False):
+                col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+                
+                with col_s1:
+                    st.markdown("**Weight Stats**")
+                    st.markdown(f"""
+                    - Mean: **{df['WT'].mean():.2f}%**
+                    - Median: **{df['WT'].median():.2f}%**
+                    - Std: **{df['WT'].std():.2f}%**
+                    - Max: **{df['WT'].max():.2f}%**
+                    - Min: **{df['WT'].min():.2f}%**
+                    """)
+                
+                with col_s2:
+                    st.markdown("**Return Stats**")
+                    st.markdown(f"""
+                    - Mean: **{df['GAIN %'].mean():.2f}%**
+                    - Median: **{df['GAIN %'].median():.2f}%**
+                    - Std: **{df['GAIN %'].std():.2f}%**
+                    - Max: **{df['GAIN %'].max():.2f}%**
+                    - Min: **{df['GAIN %'].min():.2f}%**
+                    """)
+                
+                with col_s3:
+                    st.markdown("**Concentration**")
+                    st.markdown(f"""
+                    - Top 1: **{df['WT'].max():.1f}%**
+                    - Top 3: **{df['WT'].nlargest(3).sum():.1f}%**
+                    - Top 5: **{df['WT'].nlargest(5).sum():.1f}%**
+                    - Top 10: **{df['WT'].nlargest(10).sum():.1f}%**
+                    - Bottom 50%: **{df['WT'].nsmallest(n_holdings//2).sum():.1f}%**
+                    """)
+                
+                with col_s4:
+                    st.markdown("**Diversification**")
+                    st.markdown(f"""
+                    - HHI: **{hhi:.0f}**
+                    - Effective N: **{effective_n:.1f}**
+                    - Gini: **{gini:.3f}**
+                    - Div Ratio: **{div_ratio:.2f}**
+                    - Entropy: **{-np.sum(weights * np.log(weights + 1e-10)):.2f}**
+                    """)
     
     # =========================================================================
     # ANALYSIS MODE
@@ -1301,368 +1478,908 @@ def main():
 
 
 # =========================================================================
-# ANALYSIS MODE FUNCTIONS
+# ANALYSIS MODE - INSTITUTIONAL GRADE ANALYTICS
 # =========================================================================
 
-@st.cache_data(ttl=600)
-def fetch_historical_prices(symbols, period='1y'):
-    """Fetch historical prices for portfolio analysis."""
-    if not symbols:
-        return pd.DataFrame()
+BENCHMARKS = {
+    'NIFTY 50': '^NSEI',
+    'NIFTY 500': '^CRSLDX'
+}
+
+TIMEFRAMES = {
+    '1W': 7,
+    '1M': 30,
+    '3M': 90,
+    '6M': 180,
+    'YTD': None,  # Special handling
+    '1Y': 365,
+    '2Y': 730,
+    '5Y': 1825,
+    'MAX': 3650
+}
+
+@st.cache_data(ttl=300)
+def fetch_analysis_data(symbols, days_back):
+    """Fetch historical data for portfolio and benchmarks."""
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days_back)
     
-    tickers_with_suffix = [f"{s}.NS" for s in symbols]
+    tickers = [f"{s}.NS" for s in symbols]
+    benchmark_tickers = list(BENCHMARKS.values())
+    all_tickers = tickers + benchmark_tickers
     
     try:
         data = yf.download(
-            tickers=tickers_with_suffix,
-            period=period,
+            tickers=all_tickers,
+            start=start_date.strftime('%Y-%m-%d'),
+            end=end_date.strftime('%Y-%m-%d'),
             interval='1d',
             progress=False,
             threads=True
         )
         
         if data.empty:
-            return pd.DataFrame()
+            return pd.DataFrame(), pd.DataFrame()
         
-        close_prices = data['Close']
+        close = data['Close']
         
-        # Rename columns to remove .NS suffix
-        if len(tickers_with_suffix) == 1:
-            close_prices = close_prices.to_frame()
-            close_prices.columns = [symbols[0]]
-        else:
-            close_prices.columns = [col.replace('.NS', '') for col in close_prices.columns]
+        # Handle single ticker case
+        if len(all_tickers) == 1:
+            close = close.to_frame()
+            close.columns = all_tickers
         
-        return close_prices
+        # Split portfolio and benchmark
+        portfolio_cols = [f"{s}.NS" for s in symbols]
+        benchmark_cols = benchmark_tickers
+        
+        portfolio_df = close[[c for c in portfolio_cols if c in close.columns]].copy()
+        portfolio_df.columns = [c.replace('.NS', '') for c in portfolio_df.columns]
+        
+        benchmark_df = close[[c for c in benchmark_cols if c in close.columns]].copy()
+        rename_map = {v: k for k, v in BENCHMARKS.items()}
+        benchmark_df.columns = [rename_map.get(c, c) for c in benchmark_df.columns]
+        
+        return portfolio_df, benchmark_df
         
     except Exception as e:
-        st.error(f"Error fetching historical data: {e}")
-        return pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame()
 
 
-def calculate_portfolio_time_series(df, historical_prices):
-    """Calculate portfolio value over time."""
-    if historical_prices.empty:
-        return pd.DataFrame()
+def compute_metrics(returns, benchmark_returns=None, rf_rate=0.065):
+    """Compute institutional-grade performance metrics."""
+    m = {}
     
-    # Get quantities for each symbol
-    quantities = df.set_index('SYMBOL')['QUANTITY'].to_dict()
+    if returns.empty or len(returns) < 2:
+        return m
     
-    # Calculate portfolio value for each date
-    portfolio_values = pd.DataFrame(index=historical_prices.index)
+    # Period metrics
+    total_ret = (1 + returns).prod() - 1
+    n_days = len(returns)
+    ann_factor = 252 / n_days
     
-    for symbol in historical_prices.columns:
-        if symbol in quantities:
-            portfolio_values[symbol] = historical_prices[symbol] * quantities[symbol]
+    m['total_return'] = total_ret * 100
+    m['cagr'] = ((1 + total_ret) ** ann_factor - 1) * 100
     
-    portfolio_values['Total Value'] = portfolio_values.sum(axis=1)
-    portfolio_values['Daily Return %'] = portfolio_values['Total Value'].pct_change() * 100
+    # Volatility
+    daily_vol = returns.std()
+    m['volatility'] = daily_vol * np.sqrt(252) * 100
+    m['daily_vol'] = daily_vol * 100
     
-    return portfolio_values
+    # Drawdown
+    cum = (1 + returns).cumprod()
+    peak = cum.expanding().max()
+    dd = (cum - peak) / peak
+    m['max_drawdown'] = dd.min() * 100
+    m['drawdown_series'] = dd * 100
+    
+    # Risk-adjusted ratios
+    rf_daily = rf_rate / 252
+    excess = returns - rf_daily
+    
+    m['sharpe'] = (excess.mean() / daily_vol * np.sqrt(252)) if daily_vol > 0 else 0
+    
+    downside = returns[returns < 0]
+    downside_vol = downside.std() if len(downside) > 0 else daily_vol
+    m['sortino'] = (excess.mean() / downside_vol * np.sqrt(252)) if downside_vol > 0 else 0
+    
+    m['calmar'] = m['cagr'] / abs(m['max_drawdown']) if m['max_drawdown'] != 0 else 0
+    
+    # VaR and CVaR
+    m['var_95'] = np.percentile(returns, 5) * 100
+    m['var_99'] = np.percentile(returns, 1) * 100
+    var_threshold = np.percentile(returns, 5)
+    tail = returns[returns <= var_threshold]
+    m['cvar_95'] = tail.mean() * 100 if len(tail) > 0 else m['var_95']
+    
+    # Win rate
+    m['win_rate'] = (returns > 0).mean() * 100
+    m['win_days'] = (returns > 0).sum()
+    m['lose_days'] = (returns < 0).sum()
+    
+    # Best/Worst
+    m['best_day'] = returns.max() * 100
+    m['worst_day'] = returns.min() * 100
+    
+    # Skew and Kurtosis
+    m['skewness'] = returns.skew()
+    m['kurtosis'] = returns.kurtosis()
+    
+    # Profit Factor
+    gains = returns[returns > 0].sum()
+    losses = abs(returns[returns < 0].sum())
+    m['profit_factor'] = gains / losses if losses > 0 else float('inf')
+    
+    # Benchmark-relative metrics
+    if benchmark_returns is not None and len(benchmark_returns) > 10:
+        aligned = pd.concat([returns, benchmark_returns], axis=1).dropna()
+        if len(aligned) > 10:
+            p_ret = aligned.iloc[:, 0]
+            b_ret = aligned.iloc[:, 1]
+            
+            # Beta
+            cov = np.cov(p_ret, b_ret)[0, 1]
+            var_b = b_ret.var()
+            m['beta'] = cov / var_b if var_b > 0 else 1
+            
+            # Alpha (annualized)
+            b_total = (1 + b_ret).prod() - 1
+            b_cagr = ((1 + b_total) ** ann_factor - 1)
+            p_cagr = m['cagr'] / 100
+            m['alpha'] = (p_cagr - (rf_rate + m['beta'] * (b_cagr - rf_rate))) * 100
+            
+            # Correlation and R-squared
+            m['correlation'] = p_ret.corr(b_ret)
+            m['r_squared'] = m['correlation'] ** 2
+            
+            # Tracking Error
+            tracking = (p_ret - b_ret).std() * np.sqrt(252)
+            m['tracking_error'] = tracking * 100
+            
+            # Information Ratio
+            excess_ret = p_cagr - b_cagr
+            m['info_ratio'] = excess_ret / tracking if tracking > 0 else 0
+            
+            # Treynor Ratio
+            m['treynor'] = (p_cagr - rf_rate) / m['beta'] if m['beta'] != 0 else 0
+            
+            # Up/Down Capture
+            up_mask = b_ret > 0
+            down_mask = b_ret < 0
+            
+            if up_mask.sum() > 0:
+                up_p = (1 + p_ret[up_mask]).prod()
+                up_b = (1 + b_ret[up_mask]).prod()
+                m['up_capture'] = (up_p / up_b) * 100 if up_b > 0 else 100
+            else:
+                m['up_capture'] = 100
+                
+            if down_mask.sum() > 0:
+                down_p = (1 + p_ret[down_mask]).prod()
+                down_b = (1 + b_ret[down_mask]).prod()
+                m['down_capture'] = (down_p / down_b) * 100 if down_b > 0 else 100
+            else:
+                m['down_capture'] = 100
+            
+            m['benchmark_return'] = b_total * 100
+    
+    return m
 
 
 def render_analysis_mode(df, metrics):
-    """Render the Analysis Mode dashboard."""
+    """Render Bloomberg Terminal style analytics."""
+    
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     
+    # =========================================================================
+    # HEADER & TIMEFRAME SELECTOR
+    # =========================================================================
+    
     st.markdown("""
-        <div class='section'>
-            <div class='section-header'>
-                <h3 class='section-title'>📉 Portfolio Analysis Mode</h3>
-                <p class='section-subtitle'>Historical performance tracking and time series analysis</p>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <div>
+                <h2 style="margin: 0; color: #FFC300;">Portfolio Analytics Terminal</h2>
+                <p style="margin: 0; color: #888888; font-size: 0.9rem;">Institutional-Grade Performance Analysis</p>
             </div>
         </div>
     """, unsafe_allow_html=True)
     
-    # Time period selector
-    col_period, col_custom = st.columns([1, 2])
+    # Initialize session state
+    if 'tf_selected' not in st.session_state:
+        st.session_state.tf_selected = '1Y'
     
-    with col_period:
-        period_options = {
-            "1 Week": "5d",
-            "1 Month": "1mo",
-            "3 Months": "3mo",
-            "6 Months": "6mo",
-            "Year to Date": "ytd",
-            "1 Year": "1y",
-            "2 Years": "2y",
-            "Max": "max"
-        }
-        selected_period = st.selectbox(
-            "Select Time Period",
-            options=list(period_options.keys()),
-            index=5  # Default to 1 Year
+    # Timeframe buttons row
+    tf_cols = st.columns(len(TIMEFRAMES))
+    for i, tf in enumerate(TIMEFRAMES.keys()):
+        with tf_cols[i]:
+            btn_type = "primary" if st.session_state.tf_selected == tf else "secondary"
+            if st.button(tf, key=f"tf_{tf}", use_container_width=True, type=btn_type):
+                st.session_state.tf_selected = tf
+                st.rerun()
+    
+    # Calculate days for selected timeframe
+    selected_tf = st.session_state.tf_selected
+    if selected_tf == 'YTD':
+        today = datetime.now()
+        days_back = (today - datetime(today.year, 1, 1)).days + 1
+    else:
+        days_back = TIMEFRAMES[selected_tf]
+    
+    # Benchmark selector
+    col_bench, col_spacer = st.columns([1, 4])
+    with col_bench:
+        benchmark_choice = st.selectbox(
+            "Benchmark",
+            options=['NIFTY 50', 'NIFTY 500', 'Both'],
+            index=0,
+            label_visibility="collapsed"
         )
     
-    # Fetch historical data
+    # =========================================================================
+    # FETCH DATA
+    # =========================================================================
+    
     symbols = df['SYMBOL'].tolist()
+    quantities = df.set_index('SYMBOL')['QUANTITY'].to_dict()
     
-    with st.spinner("Fetching historical data..."):
-        historical_prices = fetch_historical_prices(symbols, period_options[selected_period])
+    with st.spinner(f"Loading {selected_tf} data..."):
+        portfolio_prices, benchmark_prices = fetch_analysis_data(symbols, days_back)
     
-    if historical_prices.empty:
-        st.warning("Could not fetch historical data. Please try again later.")
+    if portfolio_prices.empty:
+        st.error("Unable to fetch historical data. Please try again.")
         return
     
-    # Calculate portfolio time series
-    portfolio_ts = calculate_portfolio_time_series(df, historical_prices)
+    # Build portfolio value series
+    port_value = pd.DataFrame(index=portfolio_prices.index)
+    for sym in portfolio_prices.columns:
+        if sym in quantities:
+            port_value[sym] = portfolio_prices[sym] * quantities[sym]
+    port_value['Portfolio'] = port_value.sum(axis=1)
+    port_value = port_value['Portfolio'].dropna()
     
-    if portfolio_ts.empty:
-        st.warning("Could not calculate portfolio time series.")
-        return
+    # Calculate returns
+    port_returns = port_value.pct_change().dropna()
+    
+    # Get benchmark returns
+    bench_returns = None
+    if not benchmark_prices.empty:
+        if benchmark_choice == 'Both':
+            bench_col = 'NIFTY 50'  # Use NIFTY 50 for metrics
+        else:
+            bench_col = benchmark_choice
+        if bench_col in benchmark_prices.columns:
+            bench_returns = benchmark_prices[bench_col].pct_change().dropna()
+    
+    # Compute metrics
+    m = compute_metrics(port_returns, bench_returns)
     
     # =========================================================================
-    # PERFORMANCE METRICS OVER PERIOD
+    # MAIN COMPARISON CHART
     # =========================================================================
     
-    start_value = portfolio_ts['Total Value'].iloc[0]
-    end_value = portfolio_ts['Total Value'].iloc[-1]
-    period_return = (end_value - start_value) / start_value * 100
-    period_gain = end_value - start_value
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     
-    # Calculate additional metrics
-    daily_returns = portfolio_ts['Daily Return %'].dropna()
-    volatility = daily_returns.std() * np.sqrt(252)  # Annualized
+    # Normalize to 100
+    port_norm = (port_value / port_value.iloc[0]) * 100
     
-    # Max Drawdown
-    cumulative = (1 + daily_returns / 100).cumprod()
-    peak = cumulative.expanding(min_periods=1).max()
-    drawdown = (cumulative - peak) / peak * 100
-    max_drawdown = drawdown.min()
+    fig = go.Figure()
     
-    # Sharpe Ratio (assuming 6% risk-free rate for India)
-    avg_daily_return = daily_returns.mean()
-    risk_free_daily = 6 / 252
-    sharpe = (avg_daily_return - risk_free_daily) / daily_returns.std() * np.sqrt(252) if daily_returns.std() > 0 else 0
+    # Portfolio trace
+    port_ret_display = m.get('total_return', 0)
+    fig.add_trace(go.Scatter(
+        x=port_norm.index,
+        y=port_norm.values,
+        mode='lines',
+        name=f'Portfolio ({port_ret_display:+.2f}%)',
+        line=dict(color='#FFC300', width=2.5),
+        hovertemplate='%{x|%b %d, %Y}<br>Portfolio: %{y:.2f}<extra></extra>'
+    ))
     
-    # Win Rate
-    win_days = (daily_returns > 0).sum()
-    total_days = len(daily_returns)
-    win_rate = win_days / total_days * 100 if total_days > 0 else 0
+    # Benchmark traces
+    if not benchmark_prices.empty:
+        colors = {'NIFTY 50': '#06b6d4', 'NIFTY 500': '#8b5cf6'}
+        benchmarks_to_show = ['NIFTY 50', 'NIFTY 500'] if benchmark_choice == 'Both' else [benchmark_choice]
+        
+        for bench_name in benchmarks_to_show:
+            if bench_name in benchmark_prices.columns:
+                bench_series = benchmark_prices[bench_name].dropna()
+                if len(bench_series) > 0:
+                    bench_norm = (bench_series / bench_series.iloc[0]) * 100
+                    bench_ret = ((bench_series.iloc[-1] / bench_series.iloc[0]) - 1) * 100
+                    fig.add_trace(go.Scatter(
+                        x=bench_norm.index,
+                        y=bench_norm.values,
+                        mode='lines',
+                        name=f'{bench_name} ({bench_ret:+.2f}%)',
+                        line=dict(color=colors.get(bench_name, '#888888'), width=2, dash='dot'),
+                        hovertemplate=f'%{{x|%b %d, %Y}}<br>{bench_name}: %{{y:.2f}}<extra></extra>'
+                    ))
     
-    # Display period metrics
-    st.markdown(f"### Performance Summary: {selected_period}")
+    # Layout
+    fig.update_layout(
+        template='plotly_dark',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color="#EAEAEA", size=12),
+        margin=dict(l=10, r=10, t=10, b=10),
+        xaxis=dict(
+            gridcolor='rgba(255,255,255,0.05)',
+            showgrid=True,
+            showspikes=True,
+            spikecolor='#FFC300',
+            spikethickness=1,
+            spikedash='dot'
+        ),
+        yaxis=dict(
+            gridcolor='rgba(255,255,255,0.05)',
+            showgrid=True,
+            title='',
+            side='right',
+            showspikes=True,
+            spikecolor='#FFC300',
+            spikethickness=1,
+            spikedash='dot'
+        ),
+        height=420,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
+            bgcolor='rgba(0,0,0,0)',
+            font=dict(size=11)
+        ),
+        hovermode='x unified'
+    )
     
-    col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
+    # Add range selector and crosshair
+    fig.update_xaxes(
+        rangeslider=dict(visible=False),
+        rangeselector=dict(visible=False)
+    )
     
-    with col_m1:
-        period_class = 'success' if period_return >= 0 else 'danger'
+    st.plotly_chart(fig, use_container_width=True, config={
+        'displayModeBar': True,
+        'displaylogo': False,
+        'modeBarButtonsToRemove': ['lasso2d', 'select2d']
+    })
+    
+    # =========================================================================
+    # PERFORMANCE SUMMARY - ROW 1 (Returns & Risk-Adjusted)
+    # =========================================================================
+    
+    st.markdown("#### Returns & Risk-Adjusted Performance")
+    
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    
+    with c1:
+        val = m.get('total_return', 0)
+        cls = 'success' if val >= 0 else 'danger'
         st.markdown(f"""
-            <div class='metric-card {period_class}'>
+            <div class='metric-card {cls}'>
                 <h4>Period Return</h4>
-                <h2>{period_return:+.2f}%</h2>
-                <div class='sub-metric'>{format_currency(period_gain)}</div>
+                <h2>{val:+.2f}%</h2>
+                <div class='sub-metric'>CAGR: {m.get('cagr', 0):+.1f}%</div>
             </div>
         """, unsafe_allow_html=True)
     
-    with col_m2:
+    with c2:
+        alpha = m.get('alpha', 0)
+        cls = 'success' if alpha > 0 else 'danger' if alpha < 0 else 'neutral'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Alpha</h4>
+                <h2>{alpha:+.2f}%</h2>
+                <div class='sub-metric'>Excess return</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c3:
+        sharpe = m.get('sharpe', 0)
+        cls = 'success' if sharpe > 1 else 'warning' if sharpe > 0.5 else 'danger'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Sharpe</h4>
+                <h2>{sharpe:.2f}</h2>
+                <div class='sub-metric'>Rf = 6.5%</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c4:
+        sortino = m.get('sortino', 0)
+        cls = 'success' if sortino > 1.5 else 'warning' if sortino > 0.5 else 'danger'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Sortino</h4>
+                <h2>{sortino:.2f}</h2>
+                <div class='sub-metric'>Downside risk</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c5:
+        calmar = m.get('calmar', 0)
+        cls = 'success' if calmar > 1 else 'warning' if calmar > 0.5 else 'danger'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Calmar</h4>
+                <h2>{calmar:.2f}</h2>
+                <div class='sub-metric'>Return/MaxDD</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c6:
+        ir = m.get('info_ratio', 0)
+        cls = 'success' if ir > 0.5 else 'warning' if ir > 0 else 'danger'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Info Ratio</h4>
+                <h2>{ir:.2f}</h2>
+                <div class='sub-metric'>Active return/TE</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    # =========================================================================
+    # ROW 2 - RISK METRICS
+    # =========================================================================
+    
+    st.markdown("#### Risk Metrics")
+    
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    
+    with c1:
+        vol = m.get('volatility', 0)
         st.markdown(f"""
             <div class='metric-card warning'>
-                <h4>Volatility (Ann.)</h4>
-                <h2>{volatility:.1f}%</h2>
-                <div class='sub-metric'>Daily σ: {daily_returns.std():.2f}%</div>
+                <h4>Volatility</h4>
+                <h2>{vol:.1f}%</h2>
+                <div class='sub-metric'>Annualized</div>
             </div>
         """, unsafe_allow_html=True)
     
-    with col_m3:
-        dd_class = 'danger' if max_drawdown < -10 else 'warning' if max_drawdown < -5 else 'success'
+    with c2:
+        mdd = m.get('max_drawdown', 0)
+        cls = 'danger' if mdd < -20 else 'warning' if mdd < -10 else 'success'
         st.markdown(f"""
-            <div class='metric-card {dd_class}'>
+            <div class='metric-card {cls}'>
                 <h4>Max Drawdown</h4>
-                <h2>{max_drawdown:.1f}%</h2>
+                <h2>{mdd:.1f}%</h2>
                 <div class='sub-metric'>Peak to trough</div>
             </div>
         """, unsafe_allow_html=True)
     
-    with col_m4:
-        sharpe_class = 'success' if sharpe > 1 else 'warning' if sharpe > 0 else 'danger'
+    with c3:
+        var95 = m.get('var_95', 0)
         st.markdown(f"""
-            <div class='metric-card {sharpe_class}'>
-                <h4>Sharpe Ratio</h4>
-                <h2>{sharpe:.2f}</h2>
-                <div class='sub-metric'>Risk-adjusted return</div>
+            <div class='metric-card danger'>
+                <h4>VaR (95%)</h4>
+                <h2>{var95:.2f}%</h2>
+                <div class='sub-metric'>Daily at risk</div>
             </div>
         """, unsafe_allow_html=True)
     
-    with col_m5:
+    with c4:
+        cvar = m.get('cvar_95', 0)
+        st.markdown(f"""
+            <div class='metric-card danger'>
+                <h4>CVaR (95%)</h4>
+                <h2>{cvar:.2f}%</h2>
+                <div class='sub-metric'>Expected shortfall</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c5:
+        beta = m.get('beta', 1)
+        cls = 'warning' if beta > 1.2 else 'info' if beta < 0.8 else 'neutral'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Beta</h4>
+                <h2>{beta:.2f}</h2>
+                <div class='sub-metric'>Market sensitivity</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c6:
+        te = m.get('tracking_error', 0)
         st.markdown(f"""
             <div class='metric-card info'>
-                <h4>Win Rate</h4>
-                <h2>{win_rate:.1f}%</h2>
-                <div class='sub-metric'>{win_days}/{total_days} days</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col_m6:
-        best_day = daily_returns.max()
-        worst_day = daily_returns.min()
-        st.markdown(f"""
-            <div class='metric-card neutral'>
-                <h4>Best / Worst Day</h4>
-                <h2 style='font-size: 1.25rem;'><span style='color: var(--success-green);'>+{best_day:.1f}%</span> / <span style='color: var(--danger-red);'>{worst_day:.1f}%</span></h2>
-                <div class='sub-metric'>Single day extremes</div>
+                <h4>Tracking Error</h4>
+                <h2>{te:.1f}%</h2>
+                <div class='sub-metric'>vs Benchmark</div>
             </div>
         """, unsafe_allow_html=True)
     
     # =========================================================================
-    # PORTFOLIO VALUE CHART
+    # ROW 3 - BENCHMARK COMPARISON
+    # =========================================================================
+    
+    st.markdown("#### Benchmark Comparison")
+    
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    
+    with c1:
+        bench_ret = m.get('benchmark_return', 0)
+        cls = 'success' if bench_ret >= 0 else 'danger'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Benchmark</h4>
+                <h2>{bench_ret:+.1f}%</h2>
+                <div class='sub-metric'>{benchmark_choice}</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c2:
+        excess = m.get('total_return', 0) - m.get('benchmark_return', 0)
+        cls = 'success' if excess > 0 else 'danger'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Excess Return</h4>
+                <h2>{excess:+.1f}%</h2>
+                <div class='sub-metric'>vs Benchmark</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c3:
+        up_cap = m.get('up_capture', 100)
+        cls = 'success' if up_cap > 100 else 'warning'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Up Capture</h4>
+                <h2>{up_cap:.0f}%</h2>
+                <div class='sub-metric'>Bull market</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c4:
+        down_cap = m.get('down_capture', 100)
+        cls = 'success' if down_cap < 100 else 'warning'
+        st.markdown(f"""
+            <div class='metric-card {cls}'>
+                <h4>Down Capture</h4>
+                <h2>{down_cap:.0f}%</h2>
+                <div class='sub-metric'>Bear market</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c5:
+        r2 = m.get('r_squared', 0)
+        st.markdown(f"""
+            <div class='metric-card info'>
+                <h4>R-Squared</h4>
+                <h2>{r2:.2f}</h2>
+                <div class='sub-metric'>Explained variance</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with c6:
+        corr = m.get('correlation', 0)
+        st.markdown(f"""
+            <div class='metric-card info'>
+                <h4>Correlation</h4>
+                <h2>{corr:.2f}</h2>
+                <div class='sub-metric'>vs Benchmark</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    # =========================================================================
+    # DRAWDOWN & DISTRIBUTION CHARTS
     # =========================================================================
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("### Portfolio Value Over Time")
     
-    fig_value = go.Figure()
+    col_dd, col_dist = st.columns(2)
     
-    fig_value.add_trace(go.Scatter(
-        x=portfolio_ts.index,
-        y=portfolio_ts['Total Value'],
-        mode='lines',
-        name='Portfolio Value',
-        line=dict(color='#FFC300', width=2),
-        fill='tozeroy',
-        fillcolor='rgba(255, 195, 0, 0.1)'
-    ))
+    with col_dd:
+        st.markdown("#### Drawdown Analysis")
+        
+        dd_series = m.get('drawdown_series', pd.Series())
+        if len(dd_series) > 0:
+            fig_dd = go.Figure()
+            fig_dd.add_trace(go.Scatter(
+                x=dd_series.index,
+                y=dd_series.values,
+                mode='lines',
+                fill='tozeroy',
+                line=dict(color='#ef4444', width=1),
+                fillcolor='rgba(239, 68, 68, 0.3)',
+                hovertemplate='%{x|%b %d, %Y}<br>Drawdown: %{y:.2f}%<extra></extra>'
+            ))
+            
+            fig_dd.add_hline(
+                y=m.get('max_drawdown', 0),
+                line_dash="dash",
+                line_color="#FFC300",
+                annotation_text=f"Max: {m.get('max_drawdown', 0):.1f}%",
+                annotation_position="right"
+            )
+            
+            fig_dd.update_layout(
+                template='plotly_dark',
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color="#EAEAEA"),
+                margin=dict(l=10, r=10, t=10, b=10),
+                xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                yaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=''),
+                height=280,
+                showlegend=False
+            )
+            st.plotly_chart(fig_dd, use_container_width=True)
     
-    fig_value.update_layout(
-        template='plotly_dark',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color="#EAEAEA"),
-        margin=dict(l=0, r=0, t=30, b=0),
-        xaxis=dict(gridcolor='rgba(255,255,255,0.05)', showgrid=True),
-        yaxis=dict(gridcolor='rgba(255,255,255,0.05)', showgrid=True, title='Value (₹)'),
-        height=400,
-        showlegend=False,
-        hovermode='x unified'
-    )
-    
-    st.plotly_chart(fig_value, width='stretch')
-    
-    # =========================================================================
-    # DAILY RETURNS DISTRIBUTION
-    # =========================================================================
-    
-    col_chart1, col_chart2 = st.columns(2)
-    
-    with col_chart1:
-        st.markdown("### Daily Returns Distribution")
+    with col_dist:
+        st.markdown("#### Returns Distribution")
         
         fig_hist = go.Figure()
-        
-        # Color bars based on positive/negative
-        colors = ['#10b981' if x >= 0 else '#ef4444' for x in daily_returns]
-        
         fig_hist.add_trace(go.Histogram(
-            x=daily_returns,
-            nbinsx=50,
+            x=port_returns * 100,
+            nbinsx=40,
             marker_color='#FFC300',
-            opacity=0.7
+            opacity=0.75,
+            hovertemplate='Return: %{x:.2f}%<br>Count: %{y}<extra></extra>'
         ))
         
-        # Add vertical line at 0
         fig_hist.add_vline(x=0, line_dash="dash", line_color="#888888", line_width=1)
-        
-        # Add mean line
-        fig_hist.add_vline(x=daily_returns.mean(), line_dash="dot", line_color="#10b981", line_width=2,
-                          annotation_text=f"Mean: {daily_returns.mean():.2f}%", annotation_position="top")
+        fig_hist.add_vline(
+            x=port_returns.mean() * 100,
+            line_dash="dot",
+            line_color="#10b981",
+            annotation_text=f"μ: {port_returns.mean()*100:.2f}%",
+            annotation_position="top"
+        )
+        fig_hist.add_vline(
+            x=m.get('var_95', 0),
+            line_dash="dash",
+            line_color="#ef4444",
+            annotation_text=f"VaR: {m.get('var_95', 0):.1f}%",
+            annotation_position="bottom left"
+        )
         
         fig_hist.update_layout(
             template='plotly_dark',
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
-            margin=dict(l=0, r=0, t=30, b=0),
+            margin=dict(l=10, r=10, t=10, b=10),
             xaxis=dict(title='Daily Return (%)', gridcolor='rgba(255,255,255,0.05)'),
-            yaxis=dict(title='Frequency', gridcolor='rgba(255,255,255,0.05)'),
-            height=350,
+            yaxis=dict(title='', gridcolor='rgba(255,255,255,0.05)'),
+            height=280,
             showlegend=False
         )
-        
-        st.plotly_chart(fig_hist, width='stretch')
-    
-    with col_chart2:
-        st.markdown("### Drawdown Over Time")
-        
-        fig_dd = go.Figure()
-        
-        fig_dd.add_trace(go.Scatter(
-            x=drawdown.index,
-            y=drawdown.values,
-            mode='lines',
-            name='Drawdown',
-            line=dict(color='#ef4444', width=1.5),
-            fill='tozeroy',
-            fillcolor='rgba(239, 68, 68, 0.2)'
-        ))
-        
-        fig_dd.update_layout(
-            template='plotly_dark',
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color="#EAEAEA"),
-            margin=dict(l=0, r=0, t=30, b=0),
-            xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
-            yaxis=dict(title='Drawdown (%)', gridcolor='rgba(255,255,255,0.05)'),
-            height=350,
-            showlegend=False
-        )
-        
-        st.plotly_chart(fig_dd, width='stretch')
+        st.plotly_chart(fig_hist, use_container_width=True)
     
     # =========================================================================
-    # INDIVIDUAL HOLDING PERFORMANCE
+    # ROLLING METRICS
     # =========================================================================
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("### Individual Holding Performance")
+    st.markdown("#### Rolling Analytics (63-day)")
     
-    # Calculate period return for each holding
-    holding_performance = []
+    window = min(63, len(port_returns) - 1)
     
-    for symbol in df['SYMBOL'].tolist():
-        if symbol in historical_prices.columns:
-            start_price = historical_prices[symbol].iloc[0]
-            end_price = historical_prices[symbol].iloc[-1]
-            if pd.notna(start_price) and pd.notna(end_price) and start_price > 0:
-                period_ret = (end_price - start_price) / start_price * 100
-                holding_performance.append({
-                    'Symbol': symbol,
-                    'Start Price': start_price,
-                    'End Price': end_price,
-                    'Period Return %': period_ret
-                })
+    if window > 20:
+        col_rs, col_rb = st.columns(2)
+        
+        with col_rs:
+            # Rolling Sharpe
+            roll_mean = port_returns.rolling(window).mean()
+            roll_std = port_returns.rolling(window).std()
+            roll_sharpe = (roll_mean / roll_std) * np.sqrt(252)
+            roll_sharpe = roll_sharpe.dropna()
+            
+            fig_rs = go.Figure()
+            fig_rs.add_trace(go.Scatter(
+                x=roll_sharpe.index,
+                y=roll_sharpe.values,
+                mode='lines',
+                line=dict(color='#FFC300', width=1.5),
+                hovertemplate='%{x|%b %d}<br>Sharpe: %{y:.2f}<extra></extra>'
+            ))
+            fig_rs.add_hline(y=1, line_dash="dash", line_color="#10b981", annotation_text="Target", annotation_position="right")
+            fig_rs.add_hline(y=0, line_dash="dash", line_color="#888888")
+            
+            fig_rs.update_layout(
+                template='plotly_dark',
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color="#EAEAEA"),
+                margin=dict(l=10, r=10, t=30, b=10),
+                title=dict(text="Rolling Sharpe Ratio", font=dict(size=13)),
+                xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                height=260,
+                showlegend=False
+            )
+            st.plotly_chart(fig_rs, use_container_width=True)
+        
+        with col_rb:
+            # Rolling Beta
+            if bench_returns is not None and len(bench_returns) > window:
+                aligned = pd.concat([port_returns, bench_returns], axis=1).dropna()
+                aligned.columns = ['Port', 'Bench']
+                
+                roll_betas = []
+                roll_dates = []
+                
+                for i in range(window, len(aligned)):
+                    w = aligned.iloc[i-window:i]
+                    cov = np.cov(w['Port'], w['Bench'])[0, 1]
+                    var = w['Bench'].var()
+                    roll_betas.append(cov / var if var > 0 else 1)
+                    roll_dates.append(aligned.index[i])
+                
+                fig_rb = go.Figure()
+                fig_rb.add_trace(go.Scatter(
+                    x=roll_dates,
+                    y=roll_betas,
+                    mode='lines',
+                    line=dict(color='#06b6d4', width=1.5),
+                    hovertemplate='%{x|%b %d}<br>Beta: %{y:.2f}<extra></extra>'
+                ))
+                fig_rb.add_hline(y=1, line_dash="dash", line_color="#888888", annotation_text="Market", annotation_position="right")
+                
+                fig_rb.update_layout(
+                    template='plotly_dark',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color="#EAEAEA"),
+                    margin=dict(l=10, r=10, t=30, b=10),
+                    title=dict(text="Rolling Beta", font=dict(size=13)),
+                    xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                    yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                    height=260,
+                    showlegend=False
+                )
+                st.plotly_chart(fig_rb, use_container_width=True)
     
-    if holding_performance:
-        perf_df = pd.DataFrame(holding_performance).sort_values('Period Return %', ascending=False)
+    # =========================================================================
+    # MONTHLY RETURNS HEATMAP
+    # =========================================================================
+    
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.markdown("#### Monthly Returns Heatmap")
+    
+    monthly = port_value.resample('ME').last().pct_change().dropna() * 100
+    
+    if len(monthly) > 1:
+        monthly_df = pd.DataFrame({
+            'Year': monthly.index.year,
+            'Month': monthly.index.month,
+            'Return': monthly.values
+        })
         
-        fig_holdings = go.Figure()
+        pivot = monthly_df.pivot_table(values='Return', index='Year', columns='Month', aggfunc='first')
+        month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        pivot.columns = [month_names[c-1] for c in pivot.columns]
         
-        colors = ['#10b981' if x >= 0 else '#ef4444' for x in perf_df['Period Return %']]
+        # Add YTD column
+        yearly = port_value.resample('YE').last().pct_change().dropna() * 100
+        yearly_dict = {idx.year: val for idx, val in yearly.items()}
+        pivot['YTD'] = pivot.index.map(lambda y: yearly_dict.get(y, np.nan))
         
-        fig_holdings.add_trace(go.Bar(
-            x=perf_df['Symbol'],
-            y=perf_df['Period Return %'],
-            marker_color=colors,
-            text=[f"{x:+.1f}%" for x in perf_df['Period Return %']],
-            textposition='outside',
-            textfont=dict(color='#EAEAEA', size=11)
+        fig_heat = go.Figure(data=go.Heatmap(
+            z=pivot.values,
+            x=pivot.columns,
+            y=pivot.index,
+            colorscale=[[0, '#ef4444'], [0.5, '#1A1A1A'], [1, '#10b981']],
+            zmid=0,
+            text=[[f"{v:.1f}%" if pd.notna(v) else "" for v in row] for row in pivot.values],
+            texttemplate="%{text}",
+            textfont=dict(size=10, color="#EAEAEA"),
+            hovertemplate="Year: %{y}<br>%{x}: %{z:.2f}%<extra></extra>",
+            showscale=False
         ))
         
-        fig_holdings.update_layout(
+        fig_heat.update_layout(
             template='plotly_dark',
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
-            margin=dict(l=0, r=0, t=30, b=0),
-            xaxis=dict(title='Symbol', gridcolor='rgba(255,255,255,0.05)', tickangle=45),
-            yaxis=dict(title='Period Return (%)', gridcolor='rgba(255,255,255,0.05)'),
-            height=400,
+            margin=dict(l=10, r=10, t=10, b=10),
+            xaxis=dict(side='top', tickangle=0),
+            yaxis=dict(autorange='reversed'),
+            height=max(150, len(pivot) * 35 + 50)
+        )
+        
+        st.plotly_chart(fig_heat, use_container_width=True)
+    
+    # =========================================================================
+    # HOLDING ATTRIBUTION
+    # =========================================================================
+    
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    st.markdown("#### Holding Attribution")
+    
+    attribution = []
+    for sym in symbols:
+        if sym in portfolio_prices.columns:
+            prices = portfolio_prices[sym].dropna()
+            if len(prices) > 1:
+                ret = (prices.iloc[-1] / prices.iloc[0] - 1) * 100
+                wt = df[df['SYMBOL'] == sym]['WT'].values[0] if 'WT' in df.columns else 0
+                contrib = ret * wt / 100
+                attribution.append({
+                    'Symbol': sym,
+                    'Return': ret,
+                    'Weight': wt,
+                    'Contribution': contrib
+                })
+    
+    if attribution:
+        attr_df = pd.DataFrame(attribution).sort_values('Contribution', ascending=True)
+        
+        fig_attr = go.Figure()
+        
+        colors = ['#10b981' if x >= 0 else '#ef4444' for x in attr_df['Contribution']]
+        
+        fig_attr.add_trace(go.Bar(
+            y=attr_df['Symbol'],
+            x=attr_df['Contribution'],
+            orientation='h',
+            marker_color=colors,
+            text=[f"{x:+.2f}%" for x in attr_df['Contribution']],
+            textposition='outside',
+            textfont=dict(size=10),
+            hovertemplate="<b>%{y}</b><br>Return: %{customdata[0]:.1f}%<br>Weight: %{customdata[1]:.1f}%<br>Contribution: %{x:.2f}%<extra></extra>",
+            customdata=attr_df[['Return', 'Weight']].values
+        ))
+        
+        fig_attr.update_layout(
+            template='plotly_dark',
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color="#EAEAEA"),
+            margin=dict(l=10, r=60, t=10, b=10),
+            xaxis=dict(title='Contribution (%)', gridcolor='rgba(255,255,255,0.05)'),
+            yaxis=dict(title='', gridcolor='rgba(255,255,255,0.05)'),
+            height=max(300, len(attr_df) * 25 + 50),
             showlegend=False
         )
         
-        st.plotly_chart(fig_holdings, width='stretch')
+        st.plotly_chart(fig_attr, use_container_width=True)
     
-    st.toast(f"Analysis loaded for {selected_period}", icon="📊")
+    # =========================================================================
+    # STATISTICS TABLE
+    # =========================================================================
+    
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+    
+    with st.expander("📋 Detailed Statistics", expanded=False):
+        col_s1, col_s2, col_s3 = st.columns(3)
+        
+        with col_s1:
+            st.markdown("**Performance**")
+            st.markdown(f"""
+            - Total Return: **{m.get('total_return', 0):+.2f}%**
+            - CAGR: **{m.get('cagr', 0):+.2f}%**
+            - Best Day: **{m.get('best_day', 0):+.2f}%**
+            - Worst Day: **{m.get('worst_day', 0):.2f}%**
+            - Win Rate: **{m.get('win_rate', 0):.1f}%** ({m.get('win_days', 0)}W / {m.get('lose_days', 0)}L)
+            - Profit Factor: **{m.get('profit_factor', 0):.2f}**
+            """)
+        
+        with col_s2:
+            st.markdown("**Risk**")
+            st.markdown(f"""
+            - Volatility (Ann.): **{m.get('volatility', 0):.2f}%**
+            - Daily Volatility: **{m.get('daily_vol', 0):.3f}%**
+            - Max Drawdown: **{m.get('max_drawdown', 0):.2f}%**
+            - VaR 95%: **{m.get('var_95', 0):.2f}%**
+            - VaR 99%: **{m.get('var_99', 0):.2f}%**
+            - CVaR 95%: **{m.get('cvar_95', 0):.2f}%**
+            """)
+        
+        with col_s3:
+            st.markdown("**Distribution**")
+            st.markdown(f"""
+            - Skewness: **{m.get('skewness', 0):.3f}**
+            - Kurtosis: **{m.get('kurtosis', 0):.3f}**
+            - Sharpe: **{m.get('sharpe', 0):.2f}**
+            - Sortino: **{m.get('sortino', 0):.2f}**
+            - Calmar: **{m.get('calmar', 0):.2f}**
+            - Treynor: **{m.get('treynor', 0):.3f}**
+            """)
+    
+    st.toast(f"Analytics loaded for {selected_tf}", icon="📊")
 
 
 if __name__ == "__main__":
