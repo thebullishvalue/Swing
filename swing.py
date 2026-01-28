@@ -733,6 +733,25 @@ def main():
         
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
         
+        # Anchor Date for Analysis Mode
+        st.markdown('<div class="sidebar-title">📅 Anchor Date</div>', unsafe_allow_html=True)
+        st.caption("Set a custom start date for Analysis Mode metrics")
+        
+        use_anchor = st.toggle("Enable Anchor Date", value=False, key="use_anchor_date")
+        
+        anchor_date = None
+        if use_anchor:
+            anchor_date = st.date_input(
+                "Investment Start Date",
+                value=datetime.now() - timedelta(days=365),
+                max_value=datetime.now().date(),
+                min_value=datetime(2010, 1, 1).date(),
+                label_visibility="collapsed"
+            )
+            st.caption(f"📌 Metrics calculated from {anchor_date.strftime('%b %d, %Y')}")
+        
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        
         st.markdown(f"""
         <div class='info-box'>
             <p style='font-size: 0.8rem; margin: 0; color: var(--text-muted); line-height: 1.5;'>
@@ -1098,11 +1117,6 @@ def main():
                 hovertemplate="<b>%{x}</b><br>Contribution: %{y:.3f}%<br>Return: %{customdata[0]:.1f}%<br>Weight: %{customdata[1]:.1f}%<extra></extra>",
                 customdata=contrib_sorted[['GAIN %', 'WT']].values
             ))
-            
-            # Add total line
-            total_contrib = contrib_sorted['WEIGHTED RETURN %'].sum()
-            fig_waterfall.add_hline(y=total_contrib, line_dash="dot", line_color="#FFC300",
-                                   annotation_text=f"Total: {total_contrib:.2f}%", annotation_position="right")
             
             fig_waterfall.update_layout(
                 template='plotly_dark',
@@ -1572,7 +1586,7 @@ def main():
     # ANALYSIS MODE
     # =========================================================================
     if view_mode == "📉 Analysis Mode":
-        render_analysis_mode(df, metrics)
+        render_analysis_mode(df, metrics, anchor_date)
     
     # =========================================================================
     # FOOTER
@@ -1789,7 +1803,7 @@ def compute_metrics(returns, benchmark_returns=None, rf_rate=0.065):
     return m
 
 
-def render_analysis_mode(df, metrics):
+def render_analysis_mode(df, metrics, anchor_date=None):
     """Render Bloomberg Terminal style analytics."""
     
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
@@ -1798,10 +1812,15 @@ def render_analysis_mode(df, metrics):
     # HEADER & TIMEFRAME SELECTOR
     # =========================================================================
     
-    st.markdown("""
+    # Show anchor date info if active
+    anchor_info = ""
+    if anchor_date:
+        anchor_info = f'<span style="color: #06b6d4; font-size: 0.8rem; margin-left: 1rem;">📌 Anchor: {anchor_date.strftime("%b %d, %Y")}</span>'
+    
+    st.markdown(f"""
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
             <div>
-                <h2 style="margin: 0; color: #FFC300;">Portfolio Analytics Terminal</h2>
+                <h2 style="margin: 0; color: #FFC300;">Portfolio Analytics Terminal{anchor_info}</h2>
                 <p style="margin: 0; color: #888888; font-size: 0.9rem;">Institutional-Grade Performance Analysis</p>
             </div>
         </div>
@@ -1811,22 +1830,28 @@ def render_analysis_mode(df, metrics):
     if 'tf_selected' not in st.session_state:
         st.session_state.tf_selected = '1Y'
     
-    # Timeframe buttons row
-    tf_cols = st.columns(len(TIMEFRAMES))
-    for i, tf in enumerate(TIMEFRAMES.keys()):
-        with tf_cols[i]:
-            btn_type = "primary" if st.session_state.tf_selected == tf else "secondary"
-            if st.button(tf, key=f"tf_{tf}", use_container_width=True, type=btn_type):
-                st.session_state.tf_selected = tf
-                st.rerun()
-    
-    # Calculate days for selected timeframe
-    selected_tf = st.session_state.tf_selected
-    if selected_tf == 'YTD':
-        today = datetime.now()
-        days_back = (today - datetime(today.year, 1, 1)).days + 1
+    # Timeframe buttons row (disabled when anchor date is active)
+    if anchor_date:
+        st.info(f"📅 **Anchor Date Active**: All metrics calculated from {anchor_date.strftime('%B %d, %Y')}. Timeframe buttons disabled.", icon="📌")
+        # Calculate days from anchor date to today
+        days_back = (datetime.now().date() - anchor_date).days + 1
+        selected_tf = "CUSTOM"
     else:
-        days_back = TIMEFRAMES[selected_tf]
+        tf_cols = st.columns(len(TIMEFRAMES))
+        for i, tf in enumerate(TIMEFRAMES.keys()):
+            with tf_cols[i]:
+                btn_type = "primary" if st.session_state.tf_selected == tf else "secondary"
+                if st.button(tf, key=f"tf_{tf}", use_container_width=True, type=btn_type):
+                    st.session_state.tf_selected = tf
+                    st.rerun()
+        
+        # Calculate days for selected timeframe
+        selected_tf = st.session_state.tf_selected
+        if selected_tf == 'YTD':
+            today = datetime.now()
+            days_back = (today - datetime(today.year, 1, 1)).days + 1
+        else:
+            days_back = TIMEFRAMES[selected_tf]
     
     # =========================================================================
     # FETCH DATA (aligned to NIFTY 50 dates)
@@ -1835,12 +1860,23 @@ def render_analysis_mode(df, metrics):
     symbols = df['SYMBOL'].tolist()
     quantities = df.set_index('SYMBOL')['QUANTITY'].to_dict()
     
-    with st.spinner(f"Loading {selected_tf} data..."):
+    spinner_text = f"Loading data from {anchor_date.strftime('%b %d, %Y')}..." if anchor_date else f"Loading {selected_tf} data..."
+    with st.spinner(spinner_text):
         portfolio_prices, benchmark_prices = fetch_analysis_data(symbols, days_back)
     
     if portfolio_prices.empty:
         st.error("Unable to fetch historical data. Please try again.")
         return
+    
+    # Apply anchor date filter if set
+    if anchor_date:
+        anchor_datetime = pd.Timestamp(anchor_date)
+        portfolio_prices = portfolio_prices[portfolio_prices.index >= anchor_datetime]
+        benchmark_prices = benchmark_prices[benchmark_prices.index >= anchor_datetime]
+        
+        if portfolio_prices.empty:
+            st.warning(f"No data available from {anchor_date.strftime('%b %d, %Y')}. Try an earlier anchor date.")
+            return
     
     # Build portfolio value series (already aligned to NIFTY 50 dates)
     port_value = pd.DataFrame(index=portfolio_prices.index)
@@ -1938,7 +1974,7 @@ def render_analysis_mode(df, metrics):
             bgcolor='rgba(0,0,0,0)',
             font=dict(size=11)
         ),
-        hovermode='x unified',
+        hovermode='closest',
         spikedistance=-1
     )
     
@@ -2434,11 +2470,11 @@ def render_analysis_mode(df, metrics):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
-            margin=dict(l=10, r=10, t=50, b=20),
+            margin=dict(l=10, r=10, t=70, b=20),
             title=dict(text="Month-over-Month Returns (%)", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
             xaxis=dict(side='top', tickangle=0, type='category', dtick=1),
             yaxis=dict(autorange='reversed', type='category', dtick=1),
-            height=max(140, len(years) * 38 + 60)
+            height=max(160, len(years) * 38 + 80)
         )
         
         st.plotly_chart(fig_heat, width="stretch")
