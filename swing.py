@@ -832,192 +832,281 @@ def main():
         tab1, tab2, tab3 = st.tabs(["**📊 Performance Analysis**", "**📋 Portfolio Details**", "**🎯 Holdings Analytics**"])
 
         with tab1:
-            # Performance Highlights
+            # =========================================================================
+            # PERFORMANCE SNAPSHOT - Quick Summary Metrics
+            # =========================================================================
             st.markdown("""
                 <div class='section'>
                     <div class='section-header'>
-                        <h3 class='section-title'>Performance Highlights</h3>
-                        <p class='section-subtitle'>Top and bottom performing assets in your portfolio</p>
+                        <h3 class='section-title'>Performance Snapshot</h3>
+                        <p class='section-subtitle'>Current portfolio performance summary (cost basis returns)</p>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
-
-            # Side-by-side layout for Absolute Gain/Loss % and Weighted Return %
-            col_metrics1, col_metrics2 = st.columns(2)
-
-            # Section 1: Absolute Gain/Loss %
-            with col_metrics1:
-                st.markdown("<h3 class='performance-section-header'>Absolute Gain/Loss %</h3>", unsafe_allow_html=True)
-                col_out1, col_under1 = st.columns(2)
-
-                with col_out1:
-                    st.markdown("<h4 class='performance-subheader'>Out-Performers</h4>", unsafe_allow_html=True)
-                    top_performers_gain = df.nlargest(3, 'GAIN %')
-                    for _, row in top_performers_gain.iterrows():
-                        gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
-                        weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
-                        st.markdown(f"""
-                            <div class='performance-card positive'>
-                                <div class='title'>{row['SYMBOL']}</div>
-                                <div class='stats'>
-                                    <span>Gain/Loss</span>
-                                    <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
-                                </div>
-                                <div class='stats'>
-                                    <span>Weighted Return</span>
-                                    <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
-                                </div>
-                                <div class='stats'>
-                                    <span>Current Price</span>
-                                    <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
-
-                with col_under1:
-                    st.markdown("<h4 class='performance-subheader'>Under-Performers</h4>", unsafe_allow_html=True)
-                    bottom_performers_gain = df.nsmallest(3, 'GAIN %')
-                    for _, row in bottom_performers_gain.iterrows():
-                        gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
-                        weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
-                        card_class = "positive" if row['GAIN %'] >= 0 else "negative"
-                        st.markdown(f"""
-                            <div class='performance-card {card_class}'>
-                                <div class='title'>{row['SYMBOL']}</div>
-                                <div class='stats'>
-                                    <span>Gain/Loss</span>
-                                    <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
-                                </div>
-                                <div class='stats'>
-                                    <span>Weighted Return</span>
-                                    <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
-                                </div>
-                                <div class='stats'>
-                                    <span>Current Price</span>
-                                    <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
-
-            # Section 2: Weighted Return %
-            with col_metrics2:
-                st.markdown("<h3 class='performance-section-header'>Weighted Return %</h3>", unsafe_allow_html=True)
-                col_out2, col_under2 = st.columns(2)
-
-                with col_out2:
-                    st.markdown("<h4 class='performance-subheader'>Out-Performers</h4>", unsafe_allow_html=True)
-                    top_performers_weighted = df.nlargest(3, 'WEIGHTED RETURN %')
-                    for _, row in top_performers_weighted.iterrows():
-                        gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
-                        weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
-                        st.markdown(f"""
-                            <div class='performance-card positive'>
-                                <div class='title'>{row['SYMBOL']}</div>
-                                <div class='stats'>
-                                    <span>Gain/Loss</span>
-                                    <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
-                                </div>
-                                <div class='stats'>
-                                    <span>Weighted Return</span>
-                                    <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
-                                </div>
-                                <div class='stats'>
-                                    <span>Current Price</span>
-                                    <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
-
-                with col_under2:
-                    st.markdown("<h4 class='performance-subheader'>Under-Performers</h4>", unsafe_allow_html=True)
-                    bottom_performers_weighted = df.nsmallest(3, 'WEIGHTED RETURN %')
-                    for _, row in bottom_performers_weighted.iterrows():
-                        gain_color = 'success-green' if row['GAIN %'] >= 0 else 'danger-red'
-                        weighted_color = 'success-green' if row['WEIGHTED RETURN %'] >= 0 else 'danger-red'
-                        card_class = "positive" if row['WEIGHTED RETURN %'] >= 0 else "negative"
-                        st.markdown(f"""
-                            <div class='performance-card {card_class}'>
-                                <div class='title'>{row['SYMBOL']}</div>
-                                <div class='stats'>
-                                    <span>Gain/Loss</span>
-                                    <span style='color: var(--{gain_color});'>{row['GAIN %']:.2f}%</span>
-                                </div>
-                                <div class='stats'>
-                                    <span>Weighted Return</span>
-                                    <span style='color: var(--{weighted_color});'>{row['WEIGHTED RETURN %']:.2f}%</span>
-                                </div>
-                                <div class='stats'>
-                                    <span>Current Price</span>
-                                    <span style='color: var(--text-primary);'>{format_currency(row['CURRENT PRICE'])}</span>
-                                </div>
-                            </div>
-                        """, unsafe_allow_html=True)
-
-            # Gain/Loss Distribution Histogram
+            
+            # Calculate snapshot metrics
+            total_gain = df['GAIN'].sum()
+            total_invested = df['INVESTED'].sum()
+            total_return_pct = (total_gain / total_invested * 100) if total_invested > 0 else 0
+            
+            winners = df[df['GAIN %'] > 0]
+            losers = df[df['GAIN %'] < 0]
+            n_winners = len(winners)
+            n_losers = len(losers)
+            n_total = len(df)
+            
+            avg_winner = winners['GAIN %'].mean() if n_winners > 0 else 0
+            avg_loser = losers['GAIN %'].mean() if n_losers > 0 else 0
+            
+            best_performer = df.loc[df['GAIN %'].idxmax()]
+            worst_performer = df.loc[df['GAIN %'].idxmin()]
+            
+            # Row 1: Key metrics
+            c1, c2, c3, c4, c5, c6 = st.columns(6)
+            
+            with c1:
+                cls = 'success' if total_gain >= 0 else 'danger'
+                st.markdown(f"""
+                    <div class='metric-card {cls}'>
+                        <h4>Total P&L</h4>
+                        <h2>{format_currency(total_gain)}</h2>
+                        <div class='sub-metric'>{total_return_pct:+.2f}% return</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c2:
+                win_rate = (n_winners / n_total * 100) if n_total > 0 else 0
+                cls = 'success' if win_rate > 50 else 'warning' if win_rate > 30 else 'danger'
+                st.markdown(f"""
+                    <div class='metric-card {cls}'>
+                        <h4>Win Rate</h4>
+                        <h2>{win_rate:.0f}%</h2>
+                        <div class='sub-metric'>{n_winners}W / {n_losers}L</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c3:
+                st.markdown(f"""
+                    <div class='metric-card success'>
+                        <h4>Avg Winner</h4>
+                        <h2>{avg_winner:+.1f}%</h2>
+                        <div class='sub-metric'>{n_winners} positions</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c4:
+                st.markdown(f"""
+                    <div class='metric-card danger'>
+                        <h4>Avg Loser</h4>
+                        <h2>{avg_loser:.1f}%</h2>
+                        <div class='sub-metric'>{n_losers} positions</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c5:
+                st.markdown(f"""
+                    <div class='metric-card success'>
+                        <h4>Best Performer</h4>
+                        <h2>{best_performer['GAIN %']:+.1f}%</h2>
+                        <div class='sub-metric'>{best_performer['SYMBOL']}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with c6:
+                st.markdown(f"""
+                    <div class='metric-card danger'>
+                        <h4>Worst Performer</h4>
+                        <h2>{worst_performer['GAIN %']:.1f}%</h2>
+                        <div class='sub-metric'>{worst_performer['SYMBOL']}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # =========================================================================
+            # TOP MOVERS - Side by side gainers and losers
+            # =========================================================================
             st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
             st.markdown("""
                 <div class='section'>
                     <div class='section-header'>
-                        <h3 class='section-title'>Gain/Loss Distribution</h3>
-                        <p class='section-subtitle'>Performance across all holdings by weight rank</p>
+                        <h3 class='section-title'>Top Movers</h3>
+                        <p class='section-subtitle'>Highest impact positions by absolute return and portfolio contribution</p>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
             
-            # Sort by weight (WT) in descending order and assign ranks
-            sorted_df = df.sort_values('WT', ascending=False).reset_index(drop=True)
-            sorted_df['Weight Rank'] = sorted_df.index + 1  # 1-based ranking
+            col_gainers, col_losers = st.columns(2)
             
-            # Create bar chart
-            fig_gain = go.Figure()
+            with col_gainers:
+                st.markdown("#### 🟢 Top Gainers")
+                top_5_gainers = df.nlargest(5, 'GAIN %')[['SYMBOL', 'GAIN %', 'WT', 'WEIGHTED RETURN %', 'GAIN']]
+                
+                fig_gainers = go.Figure()
+                fig_gainers.add_trace(go.Bar(
+                    y=top_5_gainers['SYMBOL'][::-1],
+                    x=top_5_gainers['GAIN %'][::-1],
+                    orientation='h',
+                    marker_color='#10b981',
+                    text=[f"{x:+.1f}%" for x in top_5_gainers['GAIN %'][::-1]],
+                    textposition='outside',
+                    textfont=dict(size=11),
+                    hovertemplate="<b>%{y}</b><br>Return: %{x:.2f}%<br>Weight: %{customdata[0]:.1f}%<br>Contribution: %{customdata[1]:.2f}%<extra></extra>",
+                    customdata=top_5_gainers[['WT', 'WEIGHTED RETURN %']][::-1].values
+                ))
+                fig_gainers.update_layout(
+                    template='plotly_dark',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color="#EAEAEA"),
+                    margin=dict(l=10, r=60, t=35, b=40),
+                    title=dict(text="Absolute Return %", font=dict(size=11, color='#888888'), x=0.5),
+                    xaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=''),
+                    yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                    height=250,
+                    showlegend=False
+                )
+                st.plotly_chart(fig_gainers, width="stretch")
             
-            # Calculate bar width based on number of holdings for better aesthetics
-            num_holdings = len(sorted_df)
-            bar_width = min(0.8, 15 / num_holdings) if num_holdings > 0 else 0.8
+            with col_losers:
+                st.markdown("#### 🔴 Top Losers")
+                top_5_losers = df.nsmallest(5, 'GAIN %')[['SYMBOL', 'GAIN %', 'WT', 'WEIGHTED RETURN %', 'GAIN']]
+                
+                fig_losers = go.Figure()
+                fig_losers.add_trace(go.Bar(
+                    y=top_5_losers['SYMBOL'],
+                    x=top_5_losers['GAIN %'],
+                    orientation='h',
+                    marker_color='#ef4444',
+                    text=[f"{x:.1f}%" for x in top_5_losers['GAIN %']],
+                    textposition='outside',
+                    textfont=dict(size=11),
+                    hovertemplate="<b>%{y}</b><br>Return: %{x:.2f}%<br>Weight: %{customdata[0]:.1f}%<br>Contribution: %{customdata[1]:.2f}%<extra></extra>",
+                    customdata=top_5_losers[['WT', 'WEIGHTED RETURN %']].values
+                ))
+                fig_losers.update_layout(
+                    template='plotly_dark',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color="#EAEAEA"),
+                    margin=dict(l=10, r=60, t=35, b=40),
+                    title=dict(text="Absolute Return %", font=dict(size=11, color='#888888'), x=0.5),
+                    xaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=''),
+                    yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                    height=250,
+                    showlegend=False
+                )
+                st.plotly_chart(fig_losers, width="stretch")
             
-            # Add Gain/Loss % bars with values on top
-            fig_gain.add_trace(go.Bar(
-                x=sorted_df['SYMBOL'],
-                y=sorted_df['GAIN %'],
-                name='Gain/Loss %',
-                marker_color=['#10b981' if x >= 0 else '#ef4444' for x in sorted_df['GAIN %']],
-                text=[f"{x:.2f}%" for x in sorted_df['GAIN %']],
-                textposition='outside',
-                textfont=dict(color='#EAEAEA', size=12),
-                width=bar_width
+            # =========================================================================
+            # PERFORMANCE SCATTER - Return vs Weight
+            # =========================================================================
+            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+            st.markdown("""
+                <div class='section'>
+                    <div class='section-header'>
+                        <h3 class='section-title'>Risk-Return Profile</h3>
+                        <p class='section-subtitle'>Position performance vs portfolio weight (bubble size = current value)</p>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Normalize bubble sizes
+            max_val = df['CURR. VALUE'].max()
+            bubble_sizes = (df['CURR. VALUE'] / max_val * 40) + 10
+            
+            fig_scatter = go.Figure()
+            
+            fig_scatter.add_trace(go.Scatter(
+                x=df['WT'],
+                y=df['GAIN %'],
+                mode='markers+text',
+                marker=dict(
+                    size=bubble_sizes,
+                    color=df['GAIN %'],
+                    colorscale=[[0, '#ef4444'], [0.5, '#FFC300'], [1, '#10b981']],
+                    cmid=0,
+                    line=dict(width=1, color='#EAEAEA'),
+                    opacity=0.8
+                ),
+                text=df['SYMBOL'],
+                textposition='top center',
+                textfont=dict(size=9, color='#EAEAEA'),
+                hovertemplate="<b>%{text}</b><br>Weight: %{x:.1f}%<br>Return: %{y:.2f}%<br>Value: ₹%{customdata:,.0f}<extra></extra>",
+                customdata=df['CURR. VALUE']
             ))
             
-            # Dynamic scaling for y-axis with extra padding for outside labels
-            gain_min = sorted_df['GAIN %'].min()
-            gain_max = sorted_df['GAIN %'].max()
-            padding = max(abs(gain_min), abs(gain_max)) * 0.1
-            extra_label_space = (gain_max - gain_min) * 0.1 if gain_max > 0 else 0
-            y_range = [gain_min - padding, gain_max + padding + extra_label_space]
+            # Add quadrant lines
+            fig_scatter.add_hline(y=0, line_dash="dash", line_color="#888888", line_width=1)
+            avg_weight = df['WT'].mean()
+            fig_scatter.add_vline(x=avg_weight, line_dash="dash", line_color="#888888", line_width=1,
+                                 annotation_text=f"Avg Wt: {avg_weight:.1f}%", annotation_position="top")
             
-            fig_gain.update_layout(
+            fig_scatter.update_layout(
                 template='plotly_dark',
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="#EAEAEA"),
-                margin=dict(l=0, r=0, t=20, b=0),
-                xaxis=dict(
-                    gridcolor='rgba(255,255,255,0.1)', 
-                    title='Symbol (Ordered by Weight Rank)',
-                    tickangle=45,
-                    showgrid=False
-                ),
-                yaxis=dict(
-                    gridcolor='rgba(255,255,255,0.05)', 
-                    title='Gain/Loss (%)',
-                    range=y_range
-                ),
-                showlegend=False,
-                height=500,
-                bargap=0.15
+                margin=dict(l=10, r=10, t=40, b=50),
+                title=dict(text="Weight vs Return Matrix", font=dict(size=12, color='#888888'), x=0.5),
+                xaxis=dict(title='Portfolio Weight (%)', gridcolor='rgba(255,255,255,0.05)'),
+                yaxis=dict(title='Gain/Loss (%)', gridcolor='rgba(255,255,255,0.05)'),
+                height=400,
+                showlegend=False
             )
-            st.plotly_chart(fig_gain, width='stretch')
-
-            # Portfolio Composition Treemap
+            st.plotly_chart(fig_scatter, width='stretch')
+            
+            # =========================================================================
+            # CONTRIBUTION WATERFALL
+            # =========================================================================
+            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+            st.markdown("""
+                <div class='section'>
+                    <div class='section-header'>
+                        <h3 class='section-title'>Return Attribution</h3>
+                        <p class='section-subtitle'>Contribution of each holding to total portfolio return</p>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Sort by contribution
+            contrib_sorted = df.sort_values('WEIGHTED RETURN %', ascending=False).copy()
+            
+            fig_waterfall = go.Figure()
+            
+            colors = ['#10b981' if x >= 0 else '#ef4444' for x in contrib_sorted['WEIGHTED RETURN %']]
+            
+            fig_waterfall.add_trace(go.Bar(
+                x=contrib_sorted['SYMBOL'],
+                y=contrib_sorted['WEIGHTED RETURN %'],
+                marker_color=colors,
+                text=[f"{x:+.2f}%" for x in contrib_sorted['WEIGHTED RETURN %']],
+                textposition='outside',
+                textfont=dict(size=10, color='#EAEAEA'),
+                hovertemplate="<b>%{x}</b><br>Contribution: %{y:.3f}%<br>Return: %{customdata[0]:.1f}%<br>Weight: %{customdata[1]:.1f}%<extra></extra>",
+                customdata=contrib_sorted[['GAIN %', 'WT']].values
+            ))
+            
+            # Add total line
+            total_contrib = contrib_sorted['WEIGHTED RETURN %'].sum()
+            fig_waterfall.add_hline(y=total_contrib, line_dash="dot", line_color="#FFC300",
+                                   annotation_text=f"Total: {total_contrib:.2f}%", annotation_position="right")
+            
+            fig_waterfall.update_layout(
+                template='plotly_dark',
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color="#EAEAEA"),
+                margin=dict(l=10, r=10, t=40, b=60),
+                title=dict(text="Weighted Return Contribution (Sorted by Impact)", font=dict(size=12, color='#888888'), x=0.5),
+                xaxis=dict(tickangle=45, gridcolor='rgba(255,255,255,0.05)'),
+                yaxis=dict(title='Contribution (%)', gridcolor='rgba(255,255,255,0.05)'),
+                height=400,
+                showlegend=False
+            )
+            st.plotly_chart(fig_waterfall, width='stretch')
+            
+            # =========================================================================
+            # PORTFOLIO COMPOSITION TREEMAP
+            # =========================================================================
             st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
             st.markdown("""
                 <div class='section'>
@@ -1052,9 +1141,11 @@ def main():
                 **color_scale_config 
             )
             fig_treemap.update_layout(
-                margin=dict(t=0, l=0, r=0, b=0),
+                margin=dict(t=35, l=10, r=10, b=10),
                 paper_bgcolor='rgba(0,0,0,0)',
-                font_color='#EAEAEA'
+                font_color='#EAEAEA',
+                title=dict(text="Value Allocation (Color = Gain/Loss %)", font=dict(size=12, color='#888888'), x=0.5),
+                height=400
             )
             st.plotly_chart(fig_treemap, width='stretch')
 
@@ -1296,10 +1387,11 @@ def main():
                     color_continuous_midpoint=0
                 )
                 fig_tree.update_layout(
-                    margin=dict(t=10, l=10, r=10, b=10),
+                    margin=dict(t=35, l=10, r=10, b=10),
                     paper_bgcolor='rgba(0,0,0,0)',
                     font_color='#EAEAEA',
-                    height=320
+                    title=dict(text="Weight % (Color = Gain/Loss)", font=dict(size=11, color='#888888'), x=0.5),
+                    height=340
                 )
                 fig_tree.update_coloraxes(showscale=False)
                 st.plotly_chart(fig_tree, width="stretch")
@@ -1346,10 +1438,11 @@ def main():
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                     font=dict(color="#EAEAEA"),
-                    margin=dict(l=10, r=10, t=10, b=10),
+                    margin=dict(l=10, r=10, t=35, b=45),
+                    title=dict(text="Lorenz Curve (Cumulative %)", font=dict(size=11, color='#888888'), x=0.5),
                     xaxis=dict(title='# Holdings (ranked)', gridcolor='rgba(255,255,255,0.05)'),
                     yaxis=dict(title='Cumulative Weight (%)', gridcolor='rgba(255,255,255,0.05)', range=[0, 105]),
-                    height=320,
+                    height=340,
                     showlegend=True,
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
                 )
@@ -1407,8 +1500,8 @@ def main():
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="#EAEAEA", size=10),
-                margin=dict(l=10, r=60, t=40, b=10),
-                height=max(350, n_holdings * 22 + 60),
+                margin=dict(l=10, r=60, t=50, b=40),
+                height=max(350, n_holdings * 22 + 80),
                 showlegend=False
             )
             
@@ -2100,10 +2193,11 @@ def render_analysis_mode(df, metrics):
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="#EAEAEA"),
-                margin=dict(l=10, r=10, t=10, b=10),
+                margin=dict(l=10, r=10, t=35, b=40),
+                title=dict(text="Underwater Equity Curve", font=dict(size=12, color='#888888'), x=0.5),
                 xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                 yaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=''),
-                height=280,
+                height=300,
                 showlegend=False
             )
             st.plotly_chart(fig_dd, width="stretch")
@@ -2141,10 +2235,11 @@ def render_analysis_mode(df, metrics):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
-            margin=dict(l=10, r=10, t=10, b=10),
+            margin=dict(l=10, r=10, t=35, b=40),
+            title=dict(text="Daily Returns Histogram", font=dict(size=12, color='#888888'), x=0.5),
             xaxis=dict(title='Daily Return (%)', gridcolor='rgba(255,255,255,0.05)'),
             yaxis=dict(title='', gridcolor='rgba(255,255,255,0.05)'),
-            height=280,
+            height=300,
             showlegend=False
         )
         st.plotly_chart(fig_hist, width="stretch")
@@ -2153,92 +2248,105 @@ def render_analysis_mode(df, metrics):
     # ROLLING METRICS
     # =========================================================================
     
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Rolling Analytics (63-day)")
+    # =========================================================================
+    # ROLLING ANALYTICS (Dynamic window based on timeframe)
+    # =========================================================================
     
-    window = min(63, len(port_returns) - 1)
+    # Calculate appropriate window based on data length
+    data_length = len(port_returns)
     
-    if window > 20:
+    # Dynamic window: use 1/3 of data or cap at 63 days
+    if data_length < 15:
+        # Not enough data for rolling analytics
+        pass
+    else:
+        rolling_window = min(63, max(10, data_length // 3))
+        
+        st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+        st.markdown(f"#### Rolling Analytics ({rolling_window}-day)")
+        
         col_rs, col_rb = st.columns(2)
         
         with col_rs:
             # Rolling Sharpe
-            roll_mean = port_returns.rolling(window).mean()
-            roll_std = port_returns.rolling(window).std()
+            roll_mean = port_returns.rolling(rolling_window).mean()
+            roll_std = port_returns.rolling(rolling_window).std()
             roll_sharpe = (roll_mean / roll_std) * np.sqrt(252)
             roll_sharpe = roll_sharpe.dropna()
             
-            fig_rs = go.Figure()
-            fig_rs.add_trace(go.Scatter(
-                x=roll_sharpe.index,
-                y=roll_sharpe.values,
-                mode='lines',
-                line=dict(color='#FFC300', width=1.5),
-                hovertemplate='%{x|%b %d, %Y}<br>Sharpe: %{y:.2f}<extra></extra>'
-            ))
-            fig_rs.add_hline(y=1, line_dash="dash", line_color="#10b981", annotation_text="Target", annotation_position="right")
-            fig_rs.add_hline(y=0, line_dash="dash", line_color="#888888")
-            
-            fig_rs.update_layout(
-                template='plotly_dark',
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color="#EAEAEA"),
-                margin=dict(l=10, r=10, t=30, b=10),
-                title=dict(text="Rolling Sharpe Ratio", font=dict(size=13)),
-                xaxis=dict(
-                    gridcolor='rgba(255,255,255,0.05)',
-                    tickformat='%b %Y'
-                ),
-                yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
-                height=260,
-                showlegend=False
-            )
-            st.plotly_chart(fig_rs, width="stretch")
+            if len(roll_sharpe) > 0:
+                fig_rs = go.Figure()
+                fig_rs.add_trace(go.Scatter(
+                    x=roll_sharpe.index,
+                    y=roll_sharpe.values,
+                    mode='lines',
+                    line=dict(color='#FFC300', width=1.5),
+                    hovertemplate='%{x|%b %d, %Y}<br>Sharpe: %{y:.2f}<extra></extra>'
+                ))
+                fig_rs.add_hline(y=1, line_dash="dash", line_color="#10b981", annotation_text="Target", annotation_position="right")
+                fig_rs.add_hline(y=0, line_dash="dash", line_color="#888888")
+                
+                fig_rs.update_layout(
+                    template='plotly_dark',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color="#EAEAEA"),
+                    margin=dict(l=10, r=10, t=35, b=40),
+                    title=dict(text="Rolling Sharpe Ratio", font=dict(size=12, color='#888888'), x=0.5),
+                    xaxis=dict(
+                        gridcolor='rgba(255,255,255,0.05)',
+                        tickformat='%b %Y'
+                    ),
+                    yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                    height=280,
+                    showlegend=False
+                )
+                st.plotly_chart(fig_rs, width="stretch")
         
         with col_rb:
             # Rolling Beta
-            if bench_returns is not None and len(bench_returns) > window:
+            if bench_returns is not None and len(bench_returns) > rolling_window:
                 aligned = pd.concat([port_returns, bench_returns], axis=1).dropna()
                 aligned.columns = ['Port', 'Bench']
                 
-                if len(aligned) > window:
+                if len(aligned) > rolling_window:
                     roll_betas = []
                     roll_dates = []
                     
-                    for i in range(window, len(aligned)):
-                        w = aligned.iloc[i-window:i]
+                    for i in range(rolling_window, len(aligned)):
+                        w = aligned.iloc[i-rolling_window:i]
                         cov = np.cov(w['Port'], w['Bench'])[0, 1]
                         var = w['Bench'].var()
                         roll_betas.append(cov / var if var > 0 else 1)
                         roll_dates.append(aligned.index[i])
                     
-                    fig_rb = go.Figure()
-                    fig_rb.add_trace(go.Scatter(
-                        x=roll_dates,
-                        y=roll_betas,
-                        mode='lines',
-                        line=dict(color='#06b6d4', width=1.5),
-                        hovertemplate='%{x|%b %d, %Y}<br>Beta: %{y:.2f}<extra></extra>'
-                    ))
-                    fig_rb.add_hline(y=1, line_dash="dash", line_color="#888888", annotation_text="Market", annotation_position="right")
-                    
-                    fig_rb.update_layout(
-                        template='plotly_dark',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color="#EAEAEA"),
-                        margin=dict(l=10, r=10, t=30, b=10),
-                        title=dict(text="Rolling Beta", font=dict(size=13)),
-                        xaxis=dict(
-                            gridcolor='rgba(255,255,255,0.05)',
-                            tickformat='%b %Y'
-                        ),
-                        yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
-                        height=260,
-                        showlegend=False
-                    )
-                    st.plotly_chart(fig_rb, width="stretch")
+                    if len(roll_betas) > 0:
+                        fig_rb = go.Figure()
+                        fig_rb.add_trace(go.Scatter(
+                            x=roll_dates,
+                            y=roll_betas,
+                            mode='lines',
+                            line=dict(color='#06b6d4', width=1.5),
+                            hovertemplate='%{x|%b %d, %Y}<br>Beta: %{y:.2f}<extra></extra>'
+                        ))
+                        fig_rb.add_hline(y=1, line_dash="dash", line_color="#888888", annotation_text="Market", annotation_position="right")
+                        
+                        fig_rb.update_layout(
+                            template='plotly_dark',
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color="#EAEAEA"),
+                            margin=dict(l=10, r=10, t=35, b=40),
+                            title=dict(text="Rolling Beta vs NIFTY 50", font=dict(size=12, color='#888888'), x=0.5),
+                            xaxis=dict(
+                                gridcolor='rgba(255,255,255,0.05)',
+                                tickformat='%b %Y'
+                            ),
+                            yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
+                            height=280,
+                            showlegend=False
+                        )
+                        st.plotly_chart(fig_rb, width="stretch")
     
     # =========================================================================
     # MONTHLY RETURNS HEATMAP
@@ -2312,10 +2420,11 @@ def render_analysis_mode(df, metrics):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
-            margin=dict(l=10, r=10, t=10, b=10),
+            margin=dict(l=10, r=10, t=35, b=20),
+            title=dict(text="Month-over-Month Returns (%)", font=dict(size=12, color='#888888'), x=0.5),
             xaxis=dict(side='top', tickangle=0, type='category', dtick=1),
             yaxis=dict(autorange='reversed', type='category', dtick=1),
-            height=max(120, len(years) * 35 + 50)
+            height=max(140, len(years) * 38 + 60)
         )
         
         st.plotly_chart(fig_heat, width="stretch")
@@ -2366,10 +2475,11 @@ def render_analysis_mode(df, metrics):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
-            margin=dict(l=10, r=60, t=10, b=10),
-            xaxis=dict(title='Contribution (%)', gridcolor='rgba(255,255,255,0.05)'),
+            margin=dict(l=10, r=60, t=35, b=40),
+            title=dict(text="Contribution to Portfolio Return (%)", font=dict(size=12, color='#888888'), x=0.5),
+            xaxis=dict(title='', gridcolor='rgba(255,255,255,0.05)'),
             yaxis=dict(title='', gridcolor='rgba(255,255,255,0.05)'),
-            height=max(300, len(attr_df) * 25 + 50),
+            height=max(320, len(attr_df) * 25 + 70),
             showlegend=False
         )
         
