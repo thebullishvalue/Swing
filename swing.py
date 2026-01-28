@@ -788,39 +788,49 @@ def main():
         """, unsafe_allow_html=True)
 
     with col2:
-        gain_class = 'success' if metrics['Total Gain'] >= 0 else 'danger'
+        gain_val = metrics['Total Gain']
+        gain_class = 'success' if gain_val >= 0 else 'danger'
+        gain_color = 'success-green' if gain_val >= 0 else 'danger-red'
+        gain_sign = '+' if gain_val > 0 else ''
         st.markdown(f"""
             <div class='metric-card {gain_class}'>
                 <h4>Absolute Gain/Loss</h4>
-                <h2 style='color: var(--{gain_class}-green);'>
-                    {format_currency(metrics['Total Gain'])}
+                <h2 style='color: var(--{gain_color});'>
+                    {gain_sign}{format_currency(gain_val)}
                 </h2>
                 <div class='sub-metric'>Since inception</div>
             </div>
         """, unsafe_allow_html=True)
 
     with col3:
-        return_class = 'success' if metrics['Portfolio Return %'] >= 0 else 'danger'
+        return_val = metrics['Portfolio Return %']
+        return_class = 'success' if return_val >= 0 else 'danger'
+        return_color = 'success-green' if return_val >= 0 else 'danger-red'
+        return_sign = '+' if return_val > 0 else ''
         st.markdown(f"""
             <div class='metric-card {return_class}'>
                 <h4>Total Return</h4>
-                <h2 style='color: var(--{return_class}-green);'>
-                    {metrics['Portfolio Return %']:.2f}%
+                <h2 style='color: var(--{return_color});'>
+                    {return_sign}{return_val:.2f}%
                 </h2>
                 <div class='sub-metric'>Portfolio XIRR equivalent</div>
             </div>
         """, unsafe_allow_html=True)
 
     with col4:
-        today_class = 'success' if metrics['Today Return %'] >= 0 else 'danger'
-        today_sign = '+' if metrics['Today Change'] >= 0 else ''
+        today_val = metrics['Today Return %']
+        today_change = metrics['Today Change']
+        today_class = 'success' if today_val >= 0 else 'danger'
+        today_color = 'success-green' if today_val >= 0 else 'danger-red'
+        today_sign = '+' if today_val > 0 else ''
+        change_sign = '+' if today_change > 0 else ''
         st.markdown(f"""
             <div class='metric-card {today_class}'>
                 <h4>Today's Return</h4>
-                <h2 style='color: var(--{today_class}-green);'>
-                    {today_sign}{metrics['Today Return %']:.2f}%
+                <h2 style='color: var(--{today_color});'>
+                    {today_sign}{today_val:.2f}%
                 </h2>
-                <div class='sub-metric'>{today_sign}{format_currency(metrics['Today Change'])}</div>
+                <div class='sub-metric'>{change_sign}{format_currency(today_change)}</div>
             </div>
         """, unsafe_allow_html=True)
     
@@ -886,8 +896,9 @@ def main():
                 """, unsafe_allow_html=True)
             
             with c3:
+                avg_winner_cls = 'success' if avg_winner > 0 else 'neutral' if n_winners == 0 else 'warning'
                 st.markdown(f"""
-                    <div class='metric-card success'>
+                    <div class='metric-card {avg_winner_cls}'>
                         <h4>Avg Winner</h4>
                         <h2>{avg_winner:+.1f}%</h2>
                         <div class='sub-metric'>{n_winners} positions</div>
@@ -895,8 +906,9 @@ def main():
                 """, unsafe_allow_html=True)
             
             with c4:
+                avg_loser_cls = 'danger' if avg_loser < 0 else 'neutral' if n_losers == 0 else 'warning'
                 st.markdown(f"""
-                    <div class='metric-card danger'>
+                    <div class='metric-card {avg_loser_cls}'>
                         <h4>Avg Loser</h4>
                         <h2>{avg_loser:.1f}%</h2>
                         <div class='sub-metric'>{n_losers} positions</div>
@@ -904,8 +916,9 @@ def main():
                 """, unsafe_allow_html=True)
             
             with c5:
+                best_cls = 'success' if best_performer['GAIN %'] > 0 else 'danger' if best_performer['GAIN %'] < 0 else 'neutral'
                 st.markdown(f"""
-                    <div class='metric-card success'>
+                    <div class='metric-card {best_cls}'>
                         <h4>Best Performer</h4>
                         <h2>{best_performer['GAIN %']:+.1f}%</h2>
                         <div class='sub-metric'>{best_performer['SYMBOL']}</div>
@@ -913,8 +926,9 @@ def main():
                 """, unsafe_allow_html=True)
             
             with c6:
+                worst_cls = 'danger' if worst_performer['GAIN %'] < 0 else 'success' if worst_performer['GAIN %'] > 0 else 'neutral'
                 st.markdown(f"""
-                    <div class='metric-card danger'>
+                    <div class='metric-card {worst_cls}'>
                         <h4>Worst Performer</h4>
                         <h2>{worst_performer['GAIN %']:.1f}%</h2>
                         <div class='sub-metric'>{worst_performer['SYMBOL']}</div>
@@ -957,8 +971,8 @@ def main():
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                     font=dict(color="#EAEAEA"),
-                    margin=dict(l=10, r=60, t=35, b=40),
-                    title=dict(text="Absolute Return %", font=dict(size=11, color='#888888'), x=0.5),
+                    margin=dict(l=10, r=60, t=50, b=40),
+                    title=dict(text="Absolute Return %", font=dict(size=11, color='#888888'), x=0, xanchor='left'),
                     xaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=''),
                     yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                     height=250,
@@ -987,8 +1001,8 @@ def main():
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                     font=dict(color="#EAEAEA"),
-                    margin=dict(l=10, r=60, t=35, b=40),
-                    title=dict(text="Absolute Return %", font=dict(size=11, color='#888888'), x=0.5),
+                    margin=dict(l=10, r=60, t=50, b=40),
+                    title=dict(text="Absolute Return %", font=dict(size=11, color='#888888'), x=0, xanchor='left'),
                     xaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=''),
                     yaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                     height=250,
@@ -1045,8 +1059,8 @@ def main():
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="#EAEAEA"),
-                margin=dict(l=10, r=10, t=40, b=50),
-                title=dict(text="Weight vs Return Matrix", font=dict(size=12, color='#888888'), x=0.5),
+                margin=dict(l=10, r=10, t=50, b=50),
+                title=dict(text="Weight vs Return Matrix", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
                 xaxis=dict(title='Portfolio Weight (%)', gridcolor='rgba(255,255,255,0.05)'),
                 yaxis=dict(title='Gain/Loss (%)', gridcolor='rgba(255,255,255,0.05)'),
                 height=400,
@@ -1095,8 +1109,8 @@ def main():
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="#EAEAEA"),
-                margin=dict(l=10, r=10, t=40, b=60),
-                title=dict(text="Weighted Return Contribution (Sorted by Impact)", font=dict(size=12, color='#888888'), x=0.5),
+                margin=dict(l=10, r=10, t=50, b=60),
+                title=dict(text="Weighted Return Contribution (Sorted by Impact)", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
                 xaxis=dict(tickangle=45, gridcolor='rgba(255,255,255,0.05)'),
                 yaxis=dict(title='Contribution (%)', gridcolor='rgba(255,255,255,0.05)'),
                 height=400,
@@ -1141,10 +1155,10 @@ def main():
                 **color_scale_config 
             )
             fig_treemap.update_layout(
-                margin=dict(t=35, l=10, r=10, b=10),
+                margin=dict(t=50, l=10, r=10, b=10),
                 paper_bgcolor='rgba(0,0,0,0)',
                 font_color='#EAEAEA',
-                title=dict(text="Value Allocation (Color = Gain/Loss %)", font=dict(size=12, color='#888888'), x=0.5),
+                title=dict(text="Value Allocation (Color = Gain/Loss %)", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
                 height=400
             )
             st.plotly_chart(fig_treemap, width='stretch')
@@ -1387,10 +1401,10 @@ def main():
                     color_continuous_midpoint=0
                 )
                 fig_tree.update_layout(
-                    margin=dict(t=35, l=10, r=10, b=10),
+                    margin=dict(t=50, l=10, r=10, b=10),
                     paper_bgcolor='rgba(0,0,0,0)',
                     font_color='#EAEAEA',
-                    title=dict(text="Weight % (Color = Gain/Loss)", font=dict(size=11, color='#888888'), x=0.5),
+                    title=dict(text="Weight % (Color = Gain/Loss)", font=dict(size=11, color='#888888'), x=0, xanchor='left'),
                     height=340
                 )
                 fig_tree.update_coloraxes(showscale=False)
@@ -1438,8 +1452,8 @@ def main():
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                     font=dict(color="#EAEAEA"),
-                    margin=dict(l=10, r=10, t=35, b=45),
-                    title=dict(text="Lorenz Curve (Cumulative %)", font=dict(size=11, color='#888888'), x=0.5),
+                    margin=dict(l=10, r=10, t=50, b=45),
+                    title=dict(text="Lorenz Curve (Cumulative %)", font=dict(size=11, color='#888888'), x=0, xanchor='left'),
                     xaxis=dict(title='# Holdings (ranked)', gridcolor='rgba(255,255,255,0.05)'),
                     yaxis=dict(title='Cumulative Weight (%)', gridcolor='rgba(255,255,255,0.05)', range=[0, 105]),
                     height=340,
@@ -2193,8 +2207,8 @@ def render_analysis_mode(df, metrics):
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
                 font=dict(color="#EAEAEA"),
-                margin=dict(l=10, r=10, t=35, b=40),
-                title=dict(text="Underwater Equity Curve", font=dict(size=12, color='#888888'), x=0.5),
+                margin=dict(l=10, r=10, t=50, b=40),
+                title=dict(text="Underwater Equity Curve", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
                 xaxis=dict(gridcolor='rgba(255,255,255,0.05)'),
                 yaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=''),
                 height=300,
@@ -2235,8 +2249,8 @@ def render_analysis_mode(df, metrics):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
-            margin=dict(l=10, r=10, t=35, b=40),
-            title=dict(text="Daily Returns Histogram", font=dict(size=12, color='#888888'), x=0.5),
+            margin=dict(l=10, r=10, t=50, b=40),
+            title=dict(text="Daily Returns Histogram", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
             xaxis=dict(title='Daily Return (%)', gridcolor='rgba(255,255,255,0.05)'),
             yaxis=dict(title='', gridcolor='rgba(255,255,255,0.05)'),
             height=300,
@@ -2291,8 +2305,8 @@ def render_analysis_mode(df, metrics):
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
                     font=dict(color="#EAEAEA"),
-                    margin=dict(l=10, r=10, t=35, b=40),
-                    title=dict(text="Rolling Sharpe Ratio", font=dict(size=12, color='#888888'), x=0.5),
+                    margin=dict(l=10, r=10, t=50, b=40),
+                    title=dict(text="Rolling Sharpe Ratio", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
                     xaxis=dict(
                         gridcolor='rgba(255,255,255,0.05)',
                         tickformat='%b %Y'
@@ -2336,8 +2350,8 @@ def render_analysis_mode(df, metrics):
                             plot_bgcolor='rgba(0,0,0,0)',
                             paper_bgcolor='rgba(0,0,0,0)',
                             font=dict(color="#EAEAEA"),
-                            margin=dict(l=10, r=10, t=35, b=40),
-                            title=dict(text="Rolling Beta vs NIFTY 50", font=dict(size=12, color='#888888'), x=0.5),
+                            margin=dict(l=10, r=10, t=50, b=40),
+                            title=dict(text="Rolling Beta vs NIFTY 50", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
                             xaxis=dict(
                                 gridcolor='rgba(255,255,255,0.05)',
                                 tickformat='%b %Y'
@@ -2420,8 +2434,8 @@ def render_analysis_mode(df, metrics):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
-            margin=dict(l=10, r=10, t=35, b=20),
-            title=dict(text="Month-over-Month Returns (%)", font=dict(size=12, color='#888888'), x=0.5),
+            margin=dict(l=10, r=10, t=50, b=20),
+            title=dict(text="Month-over-Month Returns (%)", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
             xaxis=dict(side='top', tickangle=0, type='category', dtick=1),
             yaxis=dict(autorange='reversed', type='category', dtick=1),
             height=max(140, len(years) * 38 + 60)
@@ -2475,8 +2489,8 @@ def render_analysis_mode(df, metrics):
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color="#EAEAEA"),
-            margin=dict(l=10, r=60, t=35, b=40),
-            title=dict(text="Contribution to Portfolio Return (%)", font=dict(size=12, color='#888888'), x=0.5),
+            margin=dict(l=10, r=60, t=50, b=40),
+            title=dict(text="Contribution to Portfolio Return (%)", font=dict(size=12, color='#888888'), x=0, xanchor='left'),
             xaxis=dict(title='', gridcolor='rgba(255,255,255,0.05)'),
             yaxis=dict(title='', gridcolor='rgba(255,255,255,0.05)'),
             height=max(320, len(attr_df) * 25 + 70),
