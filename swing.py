@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-SWING (स्विंग) - Portfolio Tracker | A Hemrek Capital Product
+SWING (स्विंग) - Portfolio Tracker | A @thebullishvalue Product
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Real-time ETF portfolio analytics with performance tracking.
 Time series analysis and historical performance insights.
@@ -23,7 +23,7 @@ from plotly.subplots import make_subplots
 # --- Constants ---
 VERSION = "v1.1.1"
 PRODUCT_NAME = "Swing"
-COMPANY = "Hemrek Capital"
+COMPANY = "@thebullishvalue"
 
 # Streamlit page configuration
 st.set_page_config(
@@ -33,7 +33,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Premium Professional CSS (Hemrek Capital Design System) ---
+# --- Premium Professional CSS (@thebullishvalue Design System) ---
 def load_css():
     st.markdown("""
     <style>

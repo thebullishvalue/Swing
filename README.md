@@ -1,6 +1,6 @@
 # SWING (स्विंग) - Portfolio Tracker
 
-**A Hemrek Capital Product | v1.1.1**
+**A @thebullishvalue Product | v1.1.1**
 
 Real-time ETF portfolio analytics with institutional-grade performance tracking, benchmark comparison, and advanced risk analytics.
 
@@ -257,10 +257,10 @@ All dependencies are listed in `requirements.txt`. Install with `pip install -r 
 
 ---
 
-## Hemrek Capital Design System
+## @thebullishvalue Design System
 
 - **Golden accent theme** (#FFC300) with dark mode interface
-- **Consistent branding** across Hemrek Capital products (NIRNAY, AARAMBH, ARTHAGATI, PRAGYAM)
+- **Consistent branding** across @thebullishvalue products (NIRNAY, AARAMBH, ARTHAGATI, PRAGYAM)
 - **Premium UI components**: Metric cards, performance cards, styled tables, and custom CSS
 - **Dynamic IST footer timestamp** for real-time awareness
 
