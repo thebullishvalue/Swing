@@ -1549,7 +1549,6 @@ def render_analysis_mode(
                            color_class=cls)
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ── Risk Metrics ────────────────────────────────────────────────────────
     render_section_header("Risk Metrics", icon="shield", accent="rose")
@@ -1582,7 +1581,6 @@ def render_analysis_mode(
         render_metric_card("Tracking Error", f"{te:.1f}%", subtext="vs Benchmark",
                            color_class="info")
 
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ── Benchmark Comparison ────────────────────────────────────────────────
