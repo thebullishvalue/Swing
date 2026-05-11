@@ -1513,6 +1513,8 @@ def render_analysis_mode(
         'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
     })
 
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
     # ── Returns & Risk-Adjusted Performance ─────────────────────────────────
     render_section_header("Returns & Risk-Adjusted Performance", icon="zap", accent="emerald")
     c1, c2, c3, c4, c5, c6 = st.columns(6)
