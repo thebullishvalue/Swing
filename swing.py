@@ -601,7 +601,7 @@ def main() -> None:
                     orientation='h',
                     marker_color=CHART_EMERALD,
                     text=[f"{x:+.1f}%" for x in top_5_gainers['GAIN %'][::-1]],
-                    textposition='outside',
+                    textposition='auto',
                     textfont=dict(size=11, color=CHART_INK),
                     hovertemplate="<b>%{y}</b><br>Return: %{x:.2f}%<br>Weight: %{customdata[0]:.1f}%<br>Contribution: %{customdata[1]:.2f}%<extra></extra>",
                     customdata=top_5_gainers[['WT', 'WEIGHTED RETURN %']][::-1].values,
@@ -623,7 +623,7 @@ def main() -> None:
                     orientation='h',
                     marker_color=CHART_ROSE,
                     text=[f"{x:.1f}%" for x in top_5_losers['GAIN %']],
-                    textposition='outside',
+                    textposition='auto',
                     textfont=dict(size=11, color=CHART_INK),
                     hovertemplate="<b>%{y}</b><br>Return: %{x:.2f}%<br>Weight: %{customdata[0]:.1f}%<br>Contribution: %{customdata[1]:.2f}%<extra></extra>",
                     customdata=top_5_losers[['WT', 'WEIGHTED RETURN %']].values,
@@ -680,7 +680,7 @@ def main() -> None:
                 x_title="Portfolio Weight (%)",
                 y_title="Gain/Loss (%)",
             )
-            st.plotly_chart(fig_scatter, width='stretch')
+            st.plotly_chart(fig_scatter, width="stretch")
 
             # ── Return Attribution ──────────────────────────────────────────
             render_section_header(
@@ -697,7 +697,7 @@ def main() -> None:
                 y=contrib_sorted['WEIGHTED RETURN %'],
                 marker_color=colors,
                 text=[f"{x:+.2f}%" for x in contrib_sorted['WEIGHTED RETURN %']],
-                textposition='outside',
+                textposition='auto',
                 textfont=dict(size=10, color=CHART_INK),
                 hovertemplate="<b>%{x}</b><br>Contribution: %{y:.3f}%<br>Return: %{customdata[0]:.1f}%<br>Weight: %{customdata[1]:.1f}%<extra></extra>",
                 customdata=contrib_sorted[['GAIN %', 'WT']].values,
@@ -709,7 +709,7 @@ def main() -> None:
                 y_title="Contribution (%)",
             )
             fig_waterfall.update_xaxes(tickangle=45)
-            st.plotly_chart(fig_waterfall, width='stretch')
+            st.plotly_chart(fig_waterfall, width="stretch")
 
             # ── Portfolio Composition ───────────────────────────────────────
             render_section_header(
@@ -751,7 +751,7 @@ def main() -> None:
                 ),
                 height=CHART_HEIGHT_LG,
             )
-            st.plotly_chart(fig_treemap, width='stretch')
+            st.plotly_chart(fig_treemap, width="stretch")
 
         with tab2:
             render_section_header(
@@ -967,7 +967,7 @@ def main() -> None:
                 orientation='h',
                 marker_color=colors_ret,
                 text=[f"{x:.2f}%" for x in contrib_df['WEIGHTED RETURN %']],
-                textposition='outside',
+                textposition='auto',
                 textfont=dict(size=9, color=CHART_INK),
                 showlegend=False,
             ), row=1, col=1)
@@ -978,7 +978,7 @@ def main() -> None:
                 orientation='h',
                 marker_color=CHART_AMBER,
                 text=[f"{x:.1f}%" for x in contrib_df['Risk Weight']],
-                textposition='outside',
+                textposition='auto',
                 textfont=dict(size=9, color=CHART_INK),
                 showlegend=False,
             ), row=1, col=2)
@@ -1399,13 +1399,13 @@ def render_analysis_mode(
         tf_cols = st.columns(len(TIMEFRAMES))
         for i, tf in enumerate(TIMEFRAMES.keys()):
             with tf_cols[i]:
-                st.button(tf, key=f"tf_{tf}_disabled", use_container_width=True, disabled=True)
+                st.button(tf, key=f"tf_{tf}_disabled", width="stretch", disabled=True)
     else:
         tf_cols = st.columns(len(TIMEFRAMES))
         for i, tf in enumerate(TIMEFRAMES.keys()):
             with tf_cols[i]:
                 btn_type = "primary" if st.session_state.tf_selected == tf else "secondary"
-                if st.button(tf, key=f"tf_{tf}", use_container_width=True, type=btn_type):
+                if st.button(tf, key=f"tf_{tf}", width="stretch", type=btn_type):
                     st.session_state.tf_selected = tf
                     st.rerun()
         
@@ -1859,7 +1859,7 @@ def render_analysis_mode(
             orientation='h',
             marker_color=colors,
             text=[f"{x:+.2f}%" for x in attr_df['Contribution']],
-            textposition='outside',
+            textposition='auto',
             textfont=dict(size=10, color=CHART_INK),
             hovertemplate="<b>%{y}</b><br>Return: %{customdata[0]:.1f}%<br>Weight: %{customdata[1]:.1f}%<br>Contribution: %{x:.2f}%<extra></extra>",
             customdata=attr_df[['Return', 'Weight']].values,
