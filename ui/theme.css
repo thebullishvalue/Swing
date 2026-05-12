@@ -1743,7 +1743,11 @@ footer {
     border: 1px solid var(--border);
     overflow: hidden;
     background: var(--glass);
-    margin: var(--sp-2) 0 var(--sp-4) 0;
+    /* Bottom margin omitted: Streamlit's stVerticalBlock gap +
+       next section-header's parent margin-top: sp-9 already provide
+       the gap. Adding margin-bottom here stacked an extra sp-4 (16px)
+       only after charts, making post-chart gaps wider than post-card. */
+    margin: var(--sp-2) 0 0 0;
     transition: border-color 250ms ease, box-shadow 250ms ease;
 }
 
@@ -3149,14 +3153,6 @@ footer {
     .system-card h3 {
         font-size: 0.9rem;
     }
-
-    .stPlotlyChart {
-        height: auto !important;
-    }
-
-    .stPlotlyChart>div {
-        height: 300px !important;
-    }
 }
 
 @media (max-width: 480px) {
@@ -4101,10 +4097,6 @@ footer {
         min-height: 180px !important;
     }
 
-    /* Charts shorter in landscape */
-    .stPlotlyChart>div {
-        height: 220px !important;
-    }
 }
 
 /* ================================================================

@@ -60,7 +60,7 @@ CHART_HEIGHT_LG = 440   # full-width (scatter, waterfall, portfolio, attribution
 CHART_MARGIN = dict(l=10, r=10, t=50, b=50)          # default: title + x-axis
 CHART_MARGIN_BAR = dict(l=10, r=60, t=50, b=50)      # horizontal bars (right space for value labels)
 CHART_MARGIN_ROTATED = dict(l=10, r=10, t=50, b=70)  # rotated x-tick labels (waterfall)
-CHART_MARGIN_NOAXIS = dict(l=10, r=10, t=50, b=20)   # treemap (no axes to label)
+CHART_MARGIN_NOAXIS = dict(l=10, r=10, t=50, b=30)   # treemap (no axes to label)
 CHART_MARGIN_NOTITLE = dict(l=10, r=10, t=20, b=50)  # no title (main portfolio chart)
 CHART_MARGIN_HEATMAP = dict(l=10, r=10, t=70, b=30)  # top-axis heatmap
 
