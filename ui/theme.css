@@ -602,13 +602,6 @@ footer {
 }
 
 /* ================================================================
-   Section spacing
-   ================================================================ */
-.section-gap {
-    height: var(--sp-8);
-}
-
-/* ================================================================
    System cards (landing page)
    ================================================================ */
 
@@ -1779,8 +1772,9 @@ footer {
 .section-divider {
     height: 1px;
     background: linear-gradient(90deg, var(--border) 0%, transparent 100%);
-    margin: var(--sp-3) 0;
     border: none;
+    /* margin is set further down (Section Vertical Rhythm) to keep
+       gap-control logic in one place. */
 }
 
 /* ================================================================
