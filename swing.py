@@ -452,9 +452,6 @@ def main() -> None:
         icon="briefcase",
     )
 
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-
-
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
@@ -497,8 +494,6 @@ def main() -> None:
             color_class="success" if today_val >= 0 else "danger",
         )
 
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-
     # =========================================================================
     # DASHBOARD VIEW (Default)
     # =========================================================================
@@ -513,8 +508,6 @@ def main() -> None:
                 icon="activity",
                 accent="emerald",
             )
-
-            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
             total_gain = df['GAIN'].sum()
             total_invested = df['INVESTED'].sum()
@@ -587,8 +580,6 @@ def main() -> None:
                     subtext=str(worst_performer['SYMBOL']),
                     color_class=cls,
                 )
-
-            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
             # ── Top Movers ──────────────────────────────────────────────────
             render_section_header(
@@ -856,8 +847,6 @@ def main() -> None:
                 render_metric_card("Gini Coeff", f"{gini:.2f}",
                                    subtext="0 = equal · 1 = concentrated",
                                    color_class="neutral")
-
-            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
             render_section_header("Performance Distribution", icon="bar-chart", accent="emerald")
             c1, c2, c3, c4, c5, c6 = st.columns(6)
@@ -1518,8 +1507,6 @@ def render_analysis_mode(
         'modeBarButtonsToRemove': ['lasso2d', 'select2d'],
     })
 
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-
     # ── Returns & Risk-Adjusted Performance ─────────────────────────────────
     render_section_header("Returns & Risk-Adjusted Performance", icon="zap", accent="emerald")
     c1, c2, c3, c4, c5, c6 = st.columns(6)
@@ -1555,8 +1542,6 @@ def render_analysis_mode(
         render_metric_card("Info Ratio", f"{ir:.2f}", subtext="Active return / TE",
                            color_class=cls)
 
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-
     # ── Risk Metrics ────────────────────────────────────────────────────────
     render_section_header("Risk Metrics", icon="shield", accent="rose")
     c1, c2, c3, c4, c5, c6 = st.columns(6)
@@ -1587,8 +1572,6 @@ def render_analysis_mode(
         te = m.get('tracking_error', 0)
         render_metric_card("Tracking Error", f"{te:.1f}%", subtext="vs Benchmark",
                            color_class="info")
-
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ── Benchmark Comparison ────────────────────────────────────────────────
     render_section_header("Benchmark Comparison", icon="compass", accent="cyan")
