@@ -23,6 +23,15 @@ import yfinance as yf
 from plotly.subplots import make_subplots
 
 from ui.theme import (
+    CHART_HEIGHT_LG,
+    CHART_HEIGHT_MD,
+    CHART_HEIGHT_SM,
+    CHART_MARGIN,
+    CHART_MARGIN_BAR,
+    CHART_MARGIN_HEATMAP,
+    CHART_MARGIN_NOAXIS,
+    CHART_MARGIN_NOTITLE,
+    CHART_MARGIN_ROTATED,
     PLOTLY_FONT,
     PLOTLY_HOVERLABEL,
     chart_layout,
@@ -325,7 +334,7 @@ def _apply_obsidian(fig, *, height: int = 360, show_legend: bool = False,
                     x_title: str = "", y_title: str = "") -> None:
     """Apply Obsidian Quant Plotly theming (mutates fig in place)."""
     layout = chart_layout(height=height, show_legend=show_legend,
-                          margin=margin or dict(t=50, l=10, r=10, b=40))
+                          margin=margin or CHART_MARGIN)
     fig.update_layout(**layout)
     if title:
         fig.update_layout(
@@ -489,9 +498,7 @@ def main() -> None:
         )
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
-    
     # =========================================================================
     # DASHBOARD VIEW (Default)
     # =========================================================================
@@ -582,8 +589,6 @@ def main() -> None:
                 )
 
             st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-            st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-
 
             # ── Top Movers ──────────────────────────────────────────────────
             render_section_header(
@@ -611,8 +616,8 @@ def main() -> None:
                     customdata=top_5_gainers[['WT', 'WEIGHTED RETURN %']][::-1].values,
                 ))
                 _apply_obsidian(
-                    fig_gainers, height=250, show_legend=False,
-                    margin=dict(l=10, r=60, t=50, b=40),
+                    fig_gainers, height=CHART_HEIGHT_SM, show_legend=False,
+                    margin=CHART_MARGIN_BAR,
                     title="Absolute Return %",
                 )
                 st.plotly_chart(fig_gainers, width="stretch")
@@ -633,8 +638,8 @@ def main() -> None:
                     customdata=top_5_losers[['WT', 'WEIGHTED RETURN %']].values,
                 ))
                 _apply_obsidian(
-                    fig_losers, height=250, show_legend=False,
-                    margin=dict(l=10, r=60, t=50, b=40),
+                    fig_losers, height=CHART_HEIGHT_SM, show_legend=False,
+                    margin=CHART_MARGIN_BAR,
                     title="Absolute Return %",
                 )
                 st.plotly_chart(fig_losers, width="stretch")
@@ -678,8 +683,8 @@ def main() -> None:
             )
 
             _apply_obsidian(
-                fig_scatter, height=400, show_legend=False,
-                margin=dict(l=10, r=10, t=50, b=50),
+                fig_scatter, height=CHART_HEIGHT_LG, show_legend=False,
+                margin=CHART_MARGIN,
                 title="Weight vs Return Matrix",
                 x_title="Portfolio Weight (%)",
                 y_title="Gain/Loss (%)",
@@ -707,8 +712,8 @@ def main() -> None:
                 customdata=contrib_sorted[['GAIN %', 'WT']].values,
             ))
             _apply_obsidian(
-                fig_waterfall, height=400, show_legend=False,
-                margin=dict(l=10, r=10, t=50, b=60),
+                fig_waterfall, height=CHART_HEIGHT_LG, show_legend=False,
+                margin=CHART_MARGIN_ROTATED,
                 title="Weighted Return Contribution · sorted by impact",
                 y_title="Contribution (%)",
             )
@@ -744,7 +749,7 @@ def main() -> None:
                 **color_scale_config,
             )
             fig_treemap.update_layout(
-                margin=dict(t=50, l=10, r=10, b=10),
+                margin=CHART_MARGIN_NOAXIS,
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 font=PLOTLY_FONT,
@@ -753,7 +758,7 @@ def main() -> None:
                     font=dict(size=12, color=CHART_INK_SUBTLE, family="JetBrains Mono, monospace"),
                     x=0, xanchor='left',
                 ),
-                height=400,
+                height=CHART_HEIGHT_LG,
             )
             st.plotly_chart(fig_treemap, width='stretch')
 
@@ -900,14 +905,14 @@ def main() -> None:
                     color_continuous_midpoint=0,
                 )
                 fig_tree.update_layout(
-                    margin=dict(t=50, l=10, r=10, b=10),
+                    margin=CHART_MARGIN_NOAXIS,
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
                     font=PLOTLY_FONT,
                     title=dict(text="Weight % · color = Gain/Loss",
                                font=dict(size=11, color=CHART_INK_SUBTLE, family="JetBrains Mono, monospace"),
                                x=0, xanchor='left'),
-                    height=340,
+                    height=CHART_HEIGHT_MD,
                 )
                 fig_tree.update_coloraxes(showscale=False)
                 st.plotly_chart(fig_tree, width="stretch")
@@ -941,8 +946,8 @@ def main() -> None:
                 fig_lorenz.add_hline(y=80, line_dash="dot", line_color=CHART_CYAN,
                                     annotation_text="80%", annotation_position="right")
                 _apply_obsidian(
-                    fig_lorenz, height=340, show_legend=True,
-                    margin=dict(l=10, r=10, t=50, b=45),
+                    fig_lorenz, height=CHART_HEIGHT_MD, show_legend=True,
+                    margin=CHART_MARGIN,
                     title="Lorenz Curve · cumulative %",
                     x_title='# Holdings (ranked)',
                     y_title='Cumulative Weight (%)',
@@ -993,8 +998,8 @@ def main() -> None:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 font=PLOTLY_FONT,
-                margin=dict(l=10, r=60, t=50, b=40),
-                height=max(350, n_holdings * 22 + 80),
+                margin=CHART_MARGIN_BAR,
+                height=max(CHART_HEIGHT_MD, n_holdings * 22 + 80),
                 showlegend=False,
                 hoverlabel=PLOTLY_HOVERLABEL,
             )
@@ -1500,8 +1505,8 @@ def render_analysis_mode(
             ))
 
     _apply_obsidian(
-        fig, height=420, show_legend=True,
-        margin=dict(l=10, r=10, t=20, b=10),
+        fig, height=CHART_HEIGHT_LG, show_legend=True,
+        margin=CHART_MARGIN_NOTITLE,
     )
     fig.update_yaxes(side='right')
     fig.update_layout(hovermode='closest')
@@ -1643,8 +1648,8 @@ def render_analysis_mode(
                 annotation_position="right",
             )
             _apply_obsidian(
-                fig_dd, height=300, show_legend=False,
-                margin=dict(l=10, r=10, t=50, b=40),
+                fig_dd, height=CHART_HEIGHT_MD, show_legend=False,
+                margin=CHART_MARGIN,
                 title="Underwater Equity Curve",
             )
             st.plotly_chart(fig_dd, width="stretch")
@@ -1675,8 +1680,8 @@ def render_analysis_mode(
             annotation_position="bottom left",
         )
         _apply_obsidian(
-            fig_hist, height=300, show_legend=False,
-            margin=dict(l=10, r=10, t=50, b=40),
+            fig_hist, height=CHART_HEIGHT_MD, show_legend=False,
+            margin=CHART_MARGIN,
             title="Daily Returns Histogram",
             x_title='Daily Return (%)',
         )
@@ -1718,8 +1723,8 @@ def render_analysis_mode(
                                  annotation_text="Target", annotation_position="right")
                 fig_rs.add_hline(y=0, line_dash="dash", line_color=CHART_INK_SUBTLE)
                 _apply_obsidian(
-                    fig_rs, height=280, show_legend=False,
-                    margin=dict(l=10, r=10, t=50, b=40),
+                    fig_rs, height=CHART_HEIGHT_SM, show_legend=False,
+                    margin=CHART_MARGIN,
                     title="Rolling Sharpe Ratio",
                 )
                 fig_rs.update_xaxes(tickformat='%b %Y')
@@ -1752,8 +1757,8 @@ def render_analysis_mode(
                         fig_rb.add_hline(y=1, line_dash="dash", line_color=CHART_INK_SUBTLE,
                                          annotation_text="Market", annotation_position="right")
                         _apply_obsidian(
-                            fig_rb, height=280, show_legend=False,
-                            margin=dict(l=10, r=10, t=50, b=40),
+                            fig_rb, height=CHART_HEIGHT_SM, show_legend=False,
+                            margin=CHART_MARGIN,
                             title=f"Rolling Beta vs {BENCHMARK_NAME}",
                         )
                         fig_rb.update_xaxes(tickformat='%b %Y')
@@ -1825,7 +1830,7 @@ def render_analysis_mode(
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             font=PLOTLY_FONT,
-            margin=dict(l=10, r=10, t=70, b=20),
+            margin=CHART_MARGIN_HEATMAP,
             title=dict(
                 text="Month-over-Month Returns (%)",
                 font=dict(size=12, color=CHART_INK_SUBTLE, family="JetBrains Mono, monospace"),
@@ -1837,7 +1842,7 @@ def render_analysis_mode(
             yaxis=dict(autorange='reversed', type='category', dtick=1,
                        tickfont=dict(size=9, family="JetBrains Mono, monospace",
                                      color=CHART_INK_SUBTLE)),
-            height=max(160, len(years) * 38 + 80),
+            height=max(CHART_HEIGHT_SM, len(years) * 38 + 80),
             hoverlabel=PLOTLY_HOVERLABEL,
         )
 
@@ -1877,8 +1882,8 @@ def render_analysis_mode(
             customdata=attr_df[['Return', 'Weight']].values,
         ))
         _apply_obsidian(
-            fig_attr, height=max(320, len(attr_df) * 25 + 70), show_legend=False,
-            margin=dict(l=10, r=60, t=50, b=40),
+            fig_attr, height=max(CHART_HEIGHT_MD, len(attr_df) * 25 + 70), show_legend=False,
+            margin=CHART_MARGIN_BAR,
             title="Contribution to Portfolio Return (%)",
         )
         st.plotly_chart(fig_attr, width="stretch")
