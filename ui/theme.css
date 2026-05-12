@@ -1762,7 +1762,7 @@ footer {
 .stPlotlyChart::after {
     content: '';
     display: block;
-    height: var(--sp-2);
+    height: var(--sp-3);
 }
 
 .stPlotlyChart:hover {
