@@ -71,6 +71,14 @@ st.set_page_config(
 inject_css()
 
 
+# Map a portfolio symbol to a yfinance ticker.
+# Symbols WITHOUT a '.' get the .NS (NSE) suffix as a fallback (e.g. RELIANCE -> RELIANCE.NS).
+# Symbols that ALREADY contain a '.' are exchange-qualified and used exactly as-is
+# (e.g. NSDL.BO -> NSDL.BO, QUEST.BO -> QUEST.BO).
+def _to_yf_ticker(symbol: str) -> str:
+    return symbol if '.' in symbol else f"{symbol}.NS"
+
+
 # Function to fetch current prices from yfinance
 @st.cache_data(ttl=300, show_spinner="Fetching real-time prices...")  # 5 min cache
 def fetch_current_prices(symbols: list[str]) -> dict[str, float | Any]:
@@ -86,9 +94,12 @@ def fetch_current_prices(symbols: list[str]) -> dict[str, float | Any]:
     if not symbols:
         return {}
 
-    # Add .NS suffix to symbols
-    tickers_with_suffix = [f"{s}.NS" for s in symbols if s and isinstance(s, str)]
-    
+    # Build ticker list (.NS fallback) and a ticker -> original symbol map
+    ticker_map = {
+        _to_yf_ticker(s): s for s in symbols if s and isinstance(s, str)
+    }
+    tickers_with_suffix = list(ticker_map.keys())
+
     prices = {}
     
     try:
@@ -118,17 +129,17 @@ def fetch_current_prices(symbols: list[str]) -> dict[str, float | Any]:
         # Single ticker case: close_prices is a Series
         if len(tickers_with_suffix) == 1:
             ticker = tickers_with_suffix[0]
-            original = ticker.replace('.NS', '')
+            original = ticker_map[ticker]
             last_price = close_prices.dropna().iloc[-1] if not close_prices.dropna().empty else np.nan
             prices[original] = float(last_price) if not pd.isna(last_price) else np.nan
-        
+
         # Multiple tickers case: close_prices is a DataFrame
         else:
             # Get last row (most recent date)
             latest_prices = close_prices.iloc[-1]
-            
+
             for ticker in tickers_with_suffix:
-                original = ticker.replace('.NS', '')
+                original = ticker_map[ticker]
                 try:
                     price = latest_prices[ticker]
                     prices[original] = float(price) if not pd.isna(price) else np.nan
@@ -169,8 +180,9 @@ def fetch_previous_close(symbols: list[str]) -> dict[str, float | Any]:
         return {}
     
     prices = {}
-    tickers_with_suffix = [f"{s}.NS" for s in symbols]
-    
+    ticker_map = {_to_yf_ticker(s): s for s in symbols}
+    tickers_with_suffix = list(ticker_map.keys())
+
     try:
         # Fetch 5 days of data to ensure we get previous close
         data = yf.download(
@@ -189,7 +201,7 @@ def fetch_previous_close(symbols: list[str]) -> dict[str, float | Any]:
         # Single ticker case
         if len(tickers_with_suffix) == 1:
             ticker = tickers_with_suffix[0]
-            original = ticker.replace('.NS', '')
+            original = ticker_map[ticker]
             if len(close_prices.dropna()) >= 2:
                 prev_close = close_prices.dropna().iloc[-2]  # Second to last
                 prices[original] = float(prev_close)
@@ -200,7 +212,7 @@ def fetch_previous_close(symbols: list[str]) -> dict[str, float | Any]:
             if len(close_prices) >= 2:
                 prev_prices = close_prices.iloc[-2]
                 for ticker in tickers_with_suffix:
-                    original = ticker.replace('.NS', '')
+                    original = ticker_map[ticker]
                     try:
                         price = prev_prices[ticker]
                         prices[original] = float(price) if not pd.isna(price) else np.nan
@@ -1123,9 +1135,10 @@ def fetch_analysis_data(
         # Get valid trading dates from NIFTY 50
         valid_dates = benchmark_df.index
         
-        # Now fetch portfolio holdings
-        tickers = [f"{s}.NS" for s in symbols]
-        
+        # Now fetch portfolio holdings (.NS fallback; '.'-qualified symbols used as-is)
+        ticker_map = {_to_yf_ticker(s): s for s in symbols}
+        tickers = list(ticker_map.keys())
+
         portfolio_data = yf.download(
             tickers=tickers,
             start=start_date.strftime('%Y-%m-%d'),
@@ -1144,7 +1157,7 @@ def fetch_analysis_data(
             portfolio_close.columns = [symbols[0]]
         else:
             portfolio_close = portfolio_data['Close']
-            portfolio_close.columns = [c.replace('.NS', '') for c in portfolio_close.columns]
+            portfolio_close.columns = [ticker_map.get(c, c) for c in portfolio_close.columns]
         
         # Align portfolio data to NIFTY 50 dates only
         portfolio_aligned = portfolio_close.reindex(valid_dates)
