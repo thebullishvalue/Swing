@@ -18,7 +18,7 @@ from pathlib import Path
 
 import streamlit as st
 
-VERSION = "v1.1.1"
+VERSION = "v1.2.0"
 PRODUCT_NAME = "Swing"
 COMPANY = "@thebullishvalue"
 
