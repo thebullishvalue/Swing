@@ -50,7 +50,7 @@ from ui.components import (
 )
 
 # --- Constants ---
-VERSION = "v1.1.1"
+VERSION = "v1.2.0"
 PRODUCT_NAME = "Swing"
 COMPANY = "@thebullishvalue"
 
