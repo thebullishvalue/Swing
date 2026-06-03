@@ -4331,11 +4331,17 @@ footer {
     margin-bottom: var(--sp-3);
 }
 
-[data-baseweb="tab-panel"] [data-testid="stVerticalBlock"]>[data-testid="stElementContainer"]:first-child:has(> div .section-hdr),
+/* First section at the page top (not inside a tab) keeps the major rhythm. */
 [data-testid="stMain"] [data-testid="stVerticalBlock"]>[data-testid="stElementContainer"]:first-child:has(> div .section-hdr) {
-    /* First section after the tab strip / page top: same 40px rhythm as every
-       other section (tab-list no longer contributes its own margin-bottom). */
     margin-top: var(--sp-6);
+}
+
+/* First section inside a tab panel BINDS to the tab strip — the active-tab
+   underline already separates them, so it uses the tighter binding tier
+   (sp-3 + base = 28px) rather than a full 40px major gap. This closes the
+   empty void left where the old full-width tab track line used to sit. */
+[data-baseweb="tab-panel"] [data-testid="stVerticalBlock"]>[data-testid="stElementContainer"]:first-child:has(> div .section-hdr) {
+    margin-top: var(--sp-3);
 }
 
 [data-testid="stColumn"] [data-testid="stElementContainer"]:has(> div .section-hdr) {
