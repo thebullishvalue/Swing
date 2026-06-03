@@ -205,6 +205,19 @@ footer {
     max-width: 98%;
 }
 
+/* ── Base vertical rhythm ────────────────────────────────────────────────
+   Pin the main content flow gap to a known scale token instead of relying on
+   Streamlit's implicit default, so every explicit section margin is
+   authoritative and the on-screen rhythm is predictable:
+     · base unit (any two stacked elements) ........ sp-4  (16px)
+     · major separation (hero/section/tabs) ........ sp-6 margin + base = 40px
+     · header → its content ........................ sp-3 margin + base = 28px
+   Value matches the prior Streamlit default, so column/card grids are
+   unchanged; it's now deterministic rather than version-dependent. */
+[data-testid="stMain"] [data-testid="stVerticalBlock"] {
+    gap: var(--sp-4);
+}
+
 /* Collapse emptied st.empty() placeholders (e.g. the progress slot once the
    load completes) so they leave no phantom vertical gap in the page flow.
    Only matches the empty state — a slot rendering the progress card is
@@ -4314,13 +4327,15 @@ footer {
 }
 
 [data-testid="stElementContainer"]:has(> div .section-hdr) {
-    margin-top: var(--sp-9);
+    margin-top: var(--sp-6);
     margin-bottom: var(--sp-3);
 }
 
 [data-baseweb="tab-panel"] [data-testid="stVerticalBlock"]>[data-testid="stElementContainer"]:first-child:has(> div .section-hdr),
 [data-testid="stMain"] [data-testid="stVerticalBlock"]>[data-testid="stElementContainer"]:first-child:has(> div .section-hdr) {
-    margin-top: var(--sp-4);
+    /* First section after the tab strip / page top: same 40px rhythm as every
+       other section (tab-list no longer contributes its own margin-bottom). */
+    margin-top: var(--sp-6);
 }
 
 [data-testid="stColumn"] [data-testid="stElementContainer"]:has(> div .section-hdr) {
@@ -4346,7 +4361,7 @@ footer {
    Portfolio Snapshot KPI row) so the tabs don't sit flush against
    metric card borders. */
 .stTabs {
-    margin-top: var(--sp-9);
+    margin-top: var(--sp-6);
 }
 
 .stTabs [data-baseweb="tab-list"] {
@@ -4355,7 +4370,10 @@ footer {
        lower than the button underline, reading as a stray extra divider. */
     border-bottom: none;
     padding-bottom: 0;
-    margin-bottom: var(--sp-6);
+    /* Spacing below the tab strip is owned solely by the next section's
+       container margin-top (single source of truth) — avoids the old
+       double-gap where this margin stacked with the section's. */
+    margin-bottom: 0;
     gap: var(--sp-6);
 }
 
