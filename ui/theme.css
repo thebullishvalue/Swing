@@ -205,12 +205,21 @@ footer {
     max-width: 98%;
 }
 
+/* Collapse emptied st.empty() placeholders (e.g. the progress slot once the
+   load completes) so they leave no phantom vertical gap in the page flow.
+   Only matches the empty state — a slot rendering the progress card is
+   unaffected. */
+[data-testid="stElementContainer"]:has([data-testid="stEmpty"]),
+[data-testid="element-container"]:has([data-testid="stEmpty"]) {
+    display: none !important;
+}
+
 /* ================================================================
    Masthead
    ================================================================ */
 .premium-header {
     padding: var(--sp-5) 0 var(--sp-6) 0;
-    margin-bottom: var(--sp-10);
+    margin-bottom: var(--sp-6);
     position: relative;
     animation: fadeInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -3794,16 +3803,8 @@ footer {
     position: relative;
 }
 
-.stTabs [data-baseweb="tab-list"]::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--amber-dim), transparent);
-    opacity: 0.3;
-}
+/* Decorative ::after gradient divider removed — it doubled up with the
+   tab-list border-bottom, reading as an extra divider above the section. */
 
 .stTabs [data-baseweb="tab"] {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -4349,10 +4350,19 @@ footer {
 }
 
 .stTabs [data-baseweb="tab-list"] {
-    border-bottom: 1px solid var(--border);
+    /* No full-width track line: the active-tab underline is the only
+       indicator. The list border-bottom + baseweb's native tab-border sat
+       lower than the button underline, reading as a stray extra divider. */
+    border-bottom: none;
     padding-bottom: 0;
-    margin-bottom: var(--sp-7);
+    margin-bottom: var(--sp-6);
     gap: var(--sp-6);
+}
+
+/* baseweb draws its own full-width track line element — hide it so only the
+   active-tab underline remains. */
+.stTabs [data-baseweb="tab-border"] {
+    display: none !important;
 }
 
 .stTabs [data-baseweb="tab"] {
