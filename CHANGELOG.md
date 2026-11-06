@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Themed progress card** (gold accent, matching the design system) shown during data loads in both Dashboard and Analysis modes; re-armed on "Refresh Prices".
 
 ### Changed
+- **Renamed the application from SWING to SAMHITA (संहिता).** The entry point is now `samhita.py` (run with `streamlit run samhita.py`); the portfolio data format (`Summary Report.xlsx`) and all behavior are unchanged.
 - All native Streamlit cache spinners silenced; fetch diagnostics now route to the terminal log so the UI surface stays cohesive.
 - **Unified vertical rhythm** across the layout — a single scale-based system: base 16px, binding tier 28px (header→content, tabs→content), major separation 40px (hero, section→section, KPI→tabs). The base flow gap is pinned to the token scale rather than relying on Streamlit's implicit default.
 - Removed the redundant "Portfolio Snapshot" section header so the KPI row sits directly below the masthead.

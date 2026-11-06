@@ -1,4 +1,4 @@
-# SWING (स्विंग) - Portfolio Tracker
+# SAMHITA (संहिता) - Portfolio Tracker
 
 **A @thebullishvalue Product | v1.2.0**
 
@@ -25,7 +25,7 @@ Real-time portfolio analytics with institutional-grade performance tracking, ben
 
 ## Overview
 
-SWING (स्विंग) is a professional-grade portfolio tracking application built with Streamlit. It provides two distinct operating modes to serve different user needs:
+SAMHITA (संहिता) is a professional-grade portfolio tracking application built with Streamlit. It provides two distinct operating modes to serve different user needs:
 
 - **Dashboard Mode**: Quick portfolio overview with performance metrics, top movers, concentration analytics, and interactive visualizations
 - **Analysis Mode**: Bloomberg Terminal-style analytics with benchmark comparison (NIFTY 50), risk-adjusted metrics, rolling analytics, and attribution analysis
@@ -38,7 +38,7 @@ The application fetches real-time prices from Yahoo Finance (primary), automatic
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        SWING Application                      │
+│                        SAMHITA Application                    │
 ├─────────────────────────────────────────────────────────────┤
 │                                                               │
 │  ┌──────────────────┐         ┌──────────────────────────┐   │
@@ -155,13 +155,13 @@ Bloomberg Terminal-grade institutional analytics with NIFTY 50 benchmark compari
 
 ```bash
 # Clone or download the repository
-cd Swing-main
+cd Samhita-main
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Run the application
-streamlit run swing.py
+streamlit run samhita.py
 ```
 
 The application will open in your default web browser at `http://localhost:8501`.
@@ -173,8 +173,8 @@ The application will open in your default web browser at `http://localhost:8501`
 ### Getting Started
 
 1. **Prepare your data**: Create an Excel file named `Summary Report.xlsx` with the required columns
-2. **Place the file**: Ensure the Excel file is in the same directory as `swing.py`
-3. **Launch the app**: Run `streamlit run swing.py`
+2. **Place the file**: Ensure the Excel file is in the same directory as `samhita.py`
+3. **Launch the app**: Run `streamlit run samhita.py`
 4. **View your portfolio**: The app will automatically fetch real-time prices and calculate metrics
 
 ### Sidebar Controls
@@ -217,7 +217,7 @@ Place your portfolio data in `Summary Report.xlsx` with the following columns:
 
 ### Constants
 
-The application uses the following configuration constants (defined at the top of `swing.py`):
+The application uses the following configuration constants (defined at the top of `samhita.py`):
 
 | Constant | Value | Description |
 |---|---|---|
