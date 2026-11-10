@@ -1,6 +1,6 @@
 """
-Samhita — Shared CSS, chart theming, and color constants for the UI layer.
-संहिता (Samhita) — "Collection / Compilation"
+Swing — Shared CSS, chart theming, and color constants for the UI layer.
+स्विंग (Swing) — Portfolio Tracker
 
 UI — Institutional research terminal design language.
 
@@ -30,12 +30,12 @@ from pathlib import Path
 import streamlit as st
 
 # ── Product identity ────────────────────────────────────────────────────────
-VERSION = "v2.0.1"
-PRODUCT_NAME = "Samhita"
+VERSION = "v2.1.0"
+PRODUCT_NAME = "Swing"
 COMPANY = "@thebullishvalue"
 
 # ── The chart palette (dark ground) ─────────────────────────────────────────
-# Samhita is a single-package app, so the palette lives here rather than in a
+# Swing is a single-package app, so the palette lives here rather than in a
 # separate core.config. One semantic ramp, shared by chrome and charts: a
 # green line equals the green chip beside it.
 _PALETTE_RGB: dict[str, tuple[int, int, int]] = {
@@ -429,7 +429,7 @@ PLOTLY_CONFIG = dict(
         "orbitRotation", "tableRotation", "resetCameraDefault3d",
         "resetCameraLastSave3d", "hoverClosest3d",
     ],
-    toImageButtonOptions=dict(format="png", scale=2, filename="samhita-chart"),
+    toImageButtonOptions=dict(format="png", scale=2, filename="swing-chart"),
     scrollZoom=False,
     doubleClick="reset",
     responsive=True,
@@ -693,7 +693,7 @@ def inject_css(theme: str = "dark") -> None:
     Injects on every render — Streamlit deduplicates identical <style> blocks.
     """
     if CSS_PATH.exists():
-        # Explicit UTF-8: theme.css embeds a Devanagari string (संहिता) in a
+        # Explicit UTF-8: theme.css embeds a Devanagari string (स्विंग) in a
         # content: "..." rule. Path.read_text() with no encoding= falls back to
         # the OS locale encoding, which on many Windows machines is cp1252 (not
         # UTF-8) — that raises UnicodeDecodeError on the non-ASCII bytes and
@@ -718,7 +718,7 @@ def inject_css(theme: str = "dark") -> None:
 # argument they would otherwise have to keep in sync by hand, but it means a
 # call site's number decides which phase it is reported under.
 #
-# Samhita has three, not Tattva's five, because it runs a shorter pipeline:
+# Swing has three, not Tattva's five, because it runs a shorter pipeline:
 # resolve quotes through the source hierarchy, compute the analytics, draw.
 RUN_PHASES = (
     (1, 0, 49, "Market Data"),

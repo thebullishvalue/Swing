@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   SAMHITA — INSTITUTIONAL DESIGN SYSTEM
-   संहिता — "Collection / Compilation"
+   SWING — INSTITUTIONAL DESIGN SYSTEM
+   स्विंग — Portfolio Tracker
 
    A terminal for reading a portfolio, not a dashboard for admiring it. The rules
    below are the ones a trading desk actually needs, and each is a decision
@@ -1778,7 +1778,7 @@
 
    Tattva never hit this because it uses no radio, toggle or date input (its
    navigation is st.navigation pages and selectboxes, both already claimed
-   above). Samhita uses all three, so they are claimed HERE, from tokens, and
+   above). Swing uses all three, so they are claimed HERE, from tokens, and
    are correct in both appearances no matter what `base` says. This is the
    durable fix the config file's own note points at: override the control, so
    the static file stops mattering.
@@ -1937,7 +1937,7 @@
    coloured control should be the one you are meant to press. */
 /* Streamlit renders the <button> inside a wrapper, so `.stButton > button`
    — the selector these rules used — never matched a single element in the
-   app. Every button in Samhita was wearing Streamlit's own face, which on the
+   app. Every button in Swing was wearing Streamlit's own face, which on the
    dark theme happens to look close enough that it went unnoticed, and on
    Paper rendered as a near-black pill with near-black text. `stBaseButton-*`
    is the button itself. Both selectors are listed: the descendant form is
@@ -2607,7 +2607,7 @@
     /* Sticky chrome costs more than it returns once the viewport is short:
        it eats the rows it was meant to protect. */
     .command-bar { position: static; }
-    /* The mark is the first thing to go — the tab title already says SAMHITA,
+    /* The mark is the first thing to go — the tab title already says SWING,
        and the portfolio value does not. */
     .command-bar .cb-brand { display: none; }
 }

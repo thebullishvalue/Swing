@@ -1,4 +1,4 @@
-# Samhita — base Streamlit theme.
+# Swing — base Streamlit theme.
 #
 # ui/theme.css (via ui.theme.inject_css) is the source of truth for almost
 # everything visual and already overrides the widgets it names explicitly.
@@ -9,7 +9,7 @@
 # semantic-color system everywhere else.
 #
 # BASE IS LIGHT, because Paper is the default appearance (see APPEARANCES in
-# samhita.py — first-in-tuple is the first-run default). This file is STATIC
+# swing.py — first-in-tuple is the first-run default). This file is STATIC
 # and cannot follow the in-app toggle, so `base` must name the appearance that
 # loads FIRST; otherwise the very first paint puts one theme's text colour on
 # the other theme's ground, which is the worst case to ship because it is the

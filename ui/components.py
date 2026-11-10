@@ -1,6 +1,6 @@
 """
-Samhita — Reusable UI components: metric cards, panels, headers, data tables.
-संहिता (Samhita) — "Collection / Compilation"
+Swing — Reusable UI components: metric cards, panels, headers, data tables.
+स्विंग (Swing) — Portfolio Tracker
 
 UI — "Graphite" institutional terminal design language (see ui/theme.py).
 
@@ -303,7 +303,7 @@ def render_chart_panel(
     its logo — previously every chart in the app shipped Plotly's own
     chrome, complete with a link out to plotly.com.
 
-    ``title`` is normally EMPTY. Every chart in Samhita already sits under a
+    ``title`` is normally EMPTY. Every chart in Swing already sits under a
     ``render_section_header`` that names it and explains how to read it; a
     panel title would be that title again, four pixels lower. What the section
     header cannot say is which instrument and window the plot is actually
@@ -515,7 +515,7 @@ def render_header(title: str, tagline: str) -> None:
     )
 
 
-def render_nav_brand(title: str = "SAMHITA", tagline: str = "संहिता · Portfolio") -> None:
+def render_nav_brand(title: str = "SWING", tagline: str = "स्विंग · Portfolio") -> None:
     """Render the control rail's brand block.
 
     The mark is split so the second half carries the accent — a product mark
@@ -604,8 +604,8 @@ def render_top_bar(
     st.markdown(
         f'<div class="command-bar{open_cls}">'
         f'<div class="cb-left">'
-        f'<div class="cb-brand"><span class="mark">SAM<span class="accent-ink">HITA</span></span>'
-        f'<span class="sub">संहिता</span></div>'
+        f'<div class="cb-brand"><span class="mark">SWI<span class="accent-ink">NG</span></span>'
+        f'<span class="sub">स्विंग</span></div>'
         f'{instrument_html}{quote_html}'
         f'</div>'
         f'<div class="cb-right">{meta_html}{chip_html}</div>'
@@ -657,7 +657,7 @@ def render_rail_readout(rows: "list[tuple[str, str, str]]") -> None:
 def render_ticker(rows, seconds_per_item: float = 3.6) -> None:
     """Render the running tape of holdings.
 
-    Tattva's tape ran a macro cross-section; Samhita's runs the portfolio,
+    Tattva's tape ran a macro cross-section; Swing's runs the portfolio,
     because that is this app's equivalent reading — the thing a holder scans
     peripherally to see what moved. Fed from quotes already resolved for the
     page, so the tape is a view of the data the run is using rather than a
@@ -772,7 +772,7 @@ def render_interpretation_card(
 
 
 # (Tattva's HERO VERDICT block lived here — a conviction chain over trading
-# signals. Samhita produces no signal, so porting it would have meant inventing
+# signals. Swing produces no signal, so porting it would have meant inventing
 # content to fill a component. The command bar carries the headline reading and
 # the KPI strip the supporting ones, which is the same job without the fiction.)
 
@@ -833,7 +833,7 @@ _TABLE_FONTS = ("https://fonts.googleapis.com/css2?"
 def _fmt_cell(value, precision: int) -> str:
     """Format one cell value for display (NaN → em dash; floats to `precision`).
 
-    Dates render date-only: Samhita is a DAILY system, so a Timestamp's
+    Dates render date-only: Swing is a DAILY system, so a Timestamp's
     ``00:00:00`` time component is noise — never shown.
     """
     if value is None:
@@ -915,7 +915,7 @@ def render_data_table(
 ) -> None:
     """Render a DataFrame as the app's one institutional table.
 
-    The only table primitive in Samhita — there is no bare ``st.dataframe``
+    The only table primitive in Swing — there is no bare ``st.dataframe``
     anywhere, because Streamlit's grid brings its own typeface, row height,
     header treatment and hover, none of which can be reached from the app's
     stylesheet. Sticky muted header, hairline row rules, right-aligned tabular

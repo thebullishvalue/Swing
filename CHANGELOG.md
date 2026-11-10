@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.1.0] - 2026-11-10
+
+### Changed
+- **Renamed the application back to SWING (स्विंग).** Every name, title, mark, log heading,
+  session key and export filename now reads Swing; the entry point is `swing.py` (run with
+  `streamlit run swing.py`). The portfolio data format (`Summary Report.xlsx`) and all behavior
+  are unchanged. (The v1.2.0 entry below records the earlier rename to SAMHITA.)
+
 ## [v2.0.1] - 2026-11-10
 
 ### Fixed

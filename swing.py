@@ -1,7 +1,7 @@
 
 # -*- coding: utf-8 -*-
 """
-SAMHITA (संहिता) - Portfolio Tracker | A @thebullishvalue Product
+SWING (स्विंग) - Portfolio Tracker | A @thebullishvalue Product
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Real-time portfolio analytics with performance tracking.
 Time series analysis and historical performance insights.
@@ -105,7 +105,7 @@ CHART_MARGIN_HEATMAP = dict(l=10, r=10, t=44, b=16)  # top-axis heatmap
 # theme's ink on the other theme's ground.
 APPEARANCES = ("Paper", "Slate")
 
-_THEME_CHOICE = "samhita_appearance"
+_THEME_CHOICE = "swing_appearance"
 
 
 # ===========================================================================
@@ -123,7 +123,7 @@ except Exception:
     pass
 
 # Silence yfinance's own console chatter (HTTP errors, "Failed download",
-# FutureWarnings) so SAMHITA's curated terminal log stays clean. Genuine
+# FutureWarnings) so SWING's curated terminal log stays clean. Genuine
 # failures are still captured and reported via the _Console below.
 import logging as _logging
 import warnings as _warnings
@@ -138,7 +138,7 @@ _SESSION_RUN_ID = f"{datetime.now():%Y%m%d_%H%M%S}_{str(uuid.uuid4())[:8]}"
 
 
 class _Console:
-    """Minimal styled console logger (Nishkarsh-style) for SAMHITA's pipeline."""
+    """Minimal styled console logger (Nishkarsh-style) for SWING's pipeline."""
 
     _USE_COLOR = bool(getattr(sys.stdout, "isatty", lambda: False)())
 
@@ -718,7 +718,7 @@ def resolve_quotes(symbols: tuple[str, ...]) -> dict[str, Quote]:
         return {}
 
     _FETCH_RAN["primary"] = True
-    log.section("SAMHITA · MARKET DATA")
+    log.section("SWING · MARKET DATA")
 
     resolved: dict[str, Quote] = {}
     provisional: dict[str, Quote] = {}
@@ -1218,7 +1218,7 @@ def _quote_notices(df: pd.DataFrame) -> list[dict]:
 def main() -> None:
     """Main application entry point."""
     st.set_page_config(
-        page_title="SAMHITA | Portfolio Intelligence",
+        page_title="SWING | Portfolio Intelligence",
         page_icon="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRDN0RGMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTggMTRsMy01IDIgMyAzLTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRDN0RGMCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=",
         layout="wide",
         initial_sidebar_state="expanded",
@@ -1265,8 +1265,8 @@ def main() -> None:
             st.cache_data.clear()
             # Re-arm the progress cards: the next run is a real (slow) cache
             # miss, so show loading feedback for both surfaces.
-            st.session_state.pop('_samhita_dash_loaded', None)
-            st.session_state.pop('_samhita_an_key', None)
+            st.session_state.pop('_swing_dash_loaded', None)
+            st.session_state.pop('_swing_an_key', None)
             st.toast("Price cache cleared")
             st.rerun()
 
@@ -1297,7 +1297,7 @@ def main() -> None:
     if df is None:
         render_empty_state(
             "No portfolio file found",
-            "Samhita reads its holdings from <strong>Summary Report.xlsx</strong> "
+            "Swing reads its holdings from <strong>Summary Report.xlsx</strong> "
             "in the application folder. The file must carry ASSET NAME, SYMBOL, "
             "QUANTITY and AVERAGE PRICE — prices are resolved live and are not "
             "part of it.",
@@ -1324,7 +1324,7 @@ def main() -> None:
 
     # Themed progress card — shown on the first load of the session; prices are
     # cached afterwards, so cosmetic reruns stay instant and quiet.
-    _show_prog = not st.session_state.get('_samhita_dash_loaded', False)
+    _show_prog = not st.session_state.get('_swing_dash_loaded', False)
 
     def _dash_progress(pct: int, label: str, sub: str = "") -> None:
         if _show_prog:
@@ -1336,7 +1336,7 @@ def main() -> None:
         progress_bar(progress_slot, 100, "Portfolio Ready",
                      f"{len(df)} holdings · prices live")
         progress_slot.empty()
-        st.session_state['_samhita_dash_loaded'] = True
+        st.session_state['_swing_dash_loaded'] = True
 
     # ─── The page shell, identical on every page ───────────────────────────
     # Order is fixed and means something: the TAPE (what moved) sits above the
@@ -1802,7 +1802,7 @@ def _render_dashboard(df: pd.DataFrame, metrics: dict) -> None:
         st.download_button(
             "Export Raw Portfolio Data (Excel)",
             excel_data,
-            file_name=f"Samhita_portfolio_details_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            file_name=f"Swing_portfolio_details_{datetime.now().strftime('%Y%m%d')}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheet.sheet",
         )
     
@@ -2082,7 +2082,7 @@ def fetch_analysis_data(
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days_back)
 
-    log.section("SAMHITA · ANALYSIS HISTORY")
+    log.section("SWING · ANALYSIS HISTORY")
     log.step(f"PRIMARY · yfinance · {len(symbols)} holding(s) + benchmark "
              f"({start_date:%d-%b-%Y} → {end_date:%d-%b-%Y})")
     t0 = time.perf_counter()
@@ -2429,7 +2429,7 @@ def render_analysis_mode(
     # instant, so the bar is skipped. The native st.spinner is intentionally
     # not used (UI/UX cohesion).
     _an_key = (tuple(symbols), days_back, str(anchor_date))
-    _show_prog = (st.session_state.get('_samhita_an_key') != _an_key
+    _show_prog = (st.session_state.get('_swing_an_key') != _an_key
                   and progress_slot is not None)
     if _show_prog:
         progress_bar(progress_slot, 30, "Fetching Analysis History",
@@ -2441,7 +2441,7 @@ def render_analysis_mode(
         progress_bar(progress_slot, 100, "History Ready",
                      f"{selected_tf} · {len(portfolio_prices)} trading days")
         progress_slot.empty()
-        st.session_state['_samhita_an_key'] = _an_key
+        st.session_state['_swing_an_key'] = _an_key
     
     if portfolio_prices.empty:
         render_empty_state(
