@@ -221,7 +221,7 @@ The application uses the following configuration constants (defined at the top o
 
 | Constant | Value | Description |
 |---|---|---|
-| `VERSION` | `v2.1.1` | Application version |
+| `VERSION` | `v2.1.2` | Application version |
 | `BENCHMARK_TICKER` | `^NSEI` | NIFTY 50 index ticker for benchmark comparison |
 | `RISK_FREE_RATE` | `6.5%` | Annualized risk-free rate used in Sharpe/Sortino calculations |
 | `CACHE_TTL` | `300s` | Cache duration for price fetching functions |
